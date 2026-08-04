@@ -53,6 +53,8 @@
     enable = true;
     powerOnBoot = true;
   };
+  # Switch USB Wi-Fi/Bluetooth dongles out of storage mode
+  hardware.usb-modeswitch.enable = true;
 
   services.fstrim.enable = true;
 
@@ -121,6 +123,7 @@
     };
   };
   programs.fish.enable = true;
+  programs.starship.enable = true;
 
   # User
   users.users.byetgin = {
