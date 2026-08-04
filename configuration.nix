@@ -37,10 +37,7 @@
     LC_TIME = "tr_TR.UTF-8";
   };
 
-  services.xserver.xkb = {
-    layout = "tr";
-    variant = "";
-  };
+  services.xserver.xkb.layout = "tr";
   console.keyMap = "trq";
 
   # Use Omarchy's JetBrains Mono Nerd Font only for monospace applications.
@@ -93,7 +90,7 @@
 
   # Nix
   nix.settings = {
-    experimental-features = [ "nix-command" "flakes" ];
+    experimental-features = [ "nix-command" ];
     auto-optimise-store = true;
   };
 
@@ -121,7 +118,6 @@
     description = "Berkay Yetgin";
     extraGroups = [ "networkmanager" "wheel" ];
     shell = pkgs.fish;
-    packages = with pkgs; [ ];
   };
 
   # Packages
@@ -138,7 +134,6 @@
   environment.systemPackages = with pkgs; [
     nur.repos.jeffguorg.oh-my-pi-bin
     gh
-    git
     brave-origin
     vscode
     jellyfin-desktop

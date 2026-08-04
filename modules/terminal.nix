@@ -13,12 +13,13 @@
       la = "eza -la --icons";
       tree = "eza --tree --icons";
       cat = "bat";
-      nixupdate = "sudo nix-channel --update && sudo nixos-rebuild switch";
+      nixupdate = "sudo nix-channel --update && sudo nixos-rebuild switch && nvd diff /run/booted-system /run/current-system";
     };
   };
 
   # Starship prompt
   programs.starship.enable = true;
+  programs.zoxide.enable = true;
 
   # Terminal packages
   environment.systemPackages = with pkgs; [
@@ -26,5 +27,6 @@
     eza
     bat
     btop
+    nvd
   ];
 }
