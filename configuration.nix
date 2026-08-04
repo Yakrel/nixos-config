@@ -132,6 +132,8 @@
     git
     brave-origin
     vscode
+    jellyfin-desktop
+    obsidian
   ];
 
   # Compatibility baseline from the initial installation; do not update it
