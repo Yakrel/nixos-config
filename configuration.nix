@@ -6,8 +6,9 @@
 
 {
   imports = [
-    # Include the results of the hardware scan.
     ./hardware-configuration.nix
+    ./modules/hardware.nix
+    ./modules/terminal.nix
   ];
 
   # Boot
@@ -48,15 +49,6 @@
     fontconfig.defaultFonts.monospace = [ "JetBrainsMono Nerd Font" ];
   };
 
-  # Hardware and peripherals
-  hardware.bluetooth = {
-    enable = true;
-    powerOnBoot = true;
-  };
-  # Switch USB Wi-Fi/Bluetooth dongles out of storage mode
-  hardware.usb-modeswitch.enable = true;
-
-  services.fstrim.enable = true;
 
   # Keep a small timeline of /home snapshots for recovering user files.
   services.snapper = {
@@ -108,7 +100,7 @@
   # Keep two weeks of rollback history, then collect unreachable store paths.
   nix.gc = {
     automatic = true;
-    dates = "weekly";
+    dates = "daily";
     options = "--delete-older-than 14d";
   };
 
@@ -122,8 +114,6 @@
       };
     };
   };
-  programs.fish.enable = true;
-  programs.starship.enable = true;
 
   # User
   users.users.byetgin = {
@@ -154,7 +144,6 @@
     jellyfin-desktop
     obsidian
     thunderbird
-    kitty
   ];
 
   # Compatibility baseline from the initial installation; do not update it
