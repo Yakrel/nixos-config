@@ -82,7 +82,12 @@
   services.xserver.enable = true;
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
-
+  environment.plasma6.excludePackages = with pkgs.kdePackages; [
+    konsole
+    elisa
+    khelpcenter
+    kate
+  ];
   # Audio
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;
@@ -105,14 +110,25 @@
     options = "--delete-older-than 14d";
   };
 
+  # Git & Shell
+  programs.git = {
+    enable = true;
+    config = {
+      user = {
+        name = "Berkay Yetgin";
+        email = "85676216+Yakrel@users.noreply.github.com";
+      };
+    };
+  };
+  programs.fish.enable = true;
+
   # User
   users.users.byetgin = {
     isNormalUser = true;
     description = "Berkay Yetgin";
     extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [
-      kdePackages.kate
-    ];
+    shell = pkgs.fish;
+    packages = with pkgs; [ ];
   };
 
   # Packages
@@ -134,6 +150,8 @@
     vscode
     jellyfin-desktop
     obsidian
+    thunderbird
+    kitty
   ];
 
   # Compatibility baseline from the initial installation; do not update it
