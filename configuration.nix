@@ -10,22 +10,18 @@
     ./hardware-configuration.nix
   ];
 
-  # ============================================================================
-  # BOOTLOADER & KERNEL
-  # ============================================================================
+  # Boot
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+
+  # Track the newest stable kernel packaged by nixos-unstable (never an RC).
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  # ============================================================================
-  # NETWORKING & HOSTNAME
-  # ============================================================================
+  # Networking
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;
 
-  # ============================================================================
-  # LOCALES & TIME ZONE
-  # ============================================================================
+  # Locale and keyboard
   time.timeZone = "Europe/Istanbul";
   i18n.defaultLocale = "en_US.UTF-8";
   i18n.extraLocaleSettings = {
@@ -40,85 +36,76 @@
     LC_TIME = "tr_TR.UTF-8";
   };
 
-  # Keyboard Layouts
   services.xserver.xkb = {
     layout = "tr";
     variant = "";
   };
   console.keyMap = "trq";
 
-  # ============================================================================
-  # FONTS CONFIGURATION (SYSTEM-WIDE JETBRAINS MONO)
-  # ============================================================================
+  # Use Omarchy's JetBrains Mono Nerd Font only for monospace applications.
   fonts = {
-    packages = with pkgs; [
-      nerd-fonts.jetbrains-mono
-    ];
-
-    fontconfig = {
-      enable = true;
-      defaultFonts = {
-        sansSerif = [ "JetBrainsMono Nerd Font" ];
-        serif     = [ "JetBrainsMono Nerd Font" ];
-        monospace = [ "JetBrainsMono Nerd Font" ];
-        emoji     = [ "JetBrainsMono Nerd Font" ];
-      };
-    };
+    packages = [ pkgs.nerd-fonts.jetbrains-mono ];
+    fontconfig.defaultFonts.monospace = [ "JetBrainsMono Nerd Font" ];
   };
 
-  # ============================================================================
-  # HARDWARE & PERFORMANCE
-  # ============================================================================
-  # Bluetooth Support
+  # Hardware and peripherals
   hardware.bluetooth = {
     enable = true;
     powerOnBoot = true;
   };
 
-  # SSD TRIM Support
   services.fstrim.enable = true;
 
-  # Printing Support
+  # Keep a small timeline of /home snapshots for recovering user files.
+  services.snapper = {
+    snapshotInterval = "hourly";
+    cleanupInterval = "1d";
+    persistentTimer = true;
+
+    configs.home = {
+      SUBVOLUME = "/home";
+      ALLOW_USERS = [ "byetgin" ];
+      SYNC_ACL = true;
+      TIMELINE_CREATE = true;
+      TIMELINE_CLEANUP = true;
+      TIMELINE_LIMIT_HOURLY = 6;
+      TIMELINE_LIMIT_DAILY = 3;
+      TIMELINE_LIMIT_WEEKLY = 2;
+      TIMELINE_LIMIT_MONTHLY = 1;
+      TIMELINE_LIMIT_YEARLY = 0;
+    };
+  };
+
   services.printing.enable = true;
 
-  # ============================================================================
-  # DISPLAY & DESKTOP ENVIRONMENT (KDE PLASMA 6)
-  # ============================================================================
+  # KDE Plasma
   services.xserver.enable = true;
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
 
-  # ============================================================================
-  # AUDIO (PIPEWIRE)
-  # ============================================================================
+  # Audio
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
     alsa.enable = true;
-    alsa.support32Bit = true;
     pulse.enable = true;
   };
 
-  # ============================================================================
-  # NIX SETTINGS & GARBAGE COLLECTION
-  # ============================================================================
-  # Enable modern CLI and search capabilities
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  # Nix
+  nix.settings = {
+    experimental-features = [ "nix-command" "flakes" ];
+    auto-optimise-store = true;
+  };
 
-  # Auto optimize nix store
-  nix.settings.auto-optimise-store = true;
-
-  # Auto garbage collection (weekly)
+  # Keep two weeks of rollback history, then collect unreachable store paths.
   nix.gc = {
     automatic = true;
     dates = "weekly";
-    options = "--delete-older-than 7d";
+    options = "--delete-older-than 14d";
   };
 
-  # ============================================================================
-  # USER ACCOUNTS
-  # ============================================================================
+  # User
   users.users.byetgin = {
     isNormalUser = true;
     description = "Berkay Yetgin";
@@ -128,19 +115,17 @@
     ];
   };
 
-  # ============================================================================
-  # NIXPKGS & NUR CONFIGURATION
-  # ============================================================================
+  # Packages
   nixpkgs.config.allowUnfree = true;
+
+  # Intentionally track NUR main to keep this unstable system bleeding edge.
   nixpkgs.config.packageOverrides = pkgs: {
     nur = import (builtins.fetchTarball "https://github.com/nix-community/NUR/archive/main.tar.gz") {
       inherit pkgs;
     };
   };
 
-  # ============================================================================
-  # SYSTEM PACKAGES
-  # ============================================================================
+  # System packages
   environment.systemPackages = with pkgs; [
     nur.repos.jeffguorg.oh-my-pi-bin
     gh
@@ -149,8 +134,7 @@
     vscode
   ];
 
-  # ============================================================================
-  # SYSTEM STATE VERSION
-  # ============================================================================
+  # Compatibility baseline from the initial installation; do not update it
+  # when updating NixOS.
   system.stateVersion = "26.11";
 }
