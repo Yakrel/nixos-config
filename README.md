@@ -1,7 +1,7 @@
 # nixos-config
 
 Rolling release NixOS — arch/yay style, every update pulls the latest packages.  
-i5-13400F · 32 GB RAM · NixOS Unstable · KDE Plasma 6
+i5-13400F · 32 GB RAM · Samsung 990 PRO 2TB NVMe SSD · NixOS Unstable · KDE Plasma 6
 
 ## Commands
 

@@ -2,7 +2,6 @@
 
 {
   imports = [
-    ./hardware-configuration.nix
     ./modules/hardware.nix
     ./modules/terminal.nix
   ];

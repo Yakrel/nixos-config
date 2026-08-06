@@ -1,4 +1,4 @@
-# Disk layout: nvme0n1 — 1G EFI boot + btrfs root
+# Disk layout: nvme0n1 (Samsung 990 PRO 2TB NVMe SSD) — 1G EFI boot + btrfs root
 # Subvolumes: @ (root)  @home  @nix (disk accounting + noatime isolation)  @snapshots (/home/.snapshots)
 # No swap — zRAM is used instead (see configuration.nix)
 { ... }: {
