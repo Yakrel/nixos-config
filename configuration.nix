@@ -62,8 +62,6 @@
       TIMELINE_LIMIT_YEARLY  = 0;
     };
   };
-  # Weekly TRIM batch — safer and more predictable than discard=async on NVMe.
-  services.fstrim.enable = true;
 
   services.printing.enable = true;
 
