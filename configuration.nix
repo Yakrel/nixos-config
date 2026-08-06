@@ -1,7 +1,3 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-
 { config, pkgs, ... }:
 
 {
@@ -90,7 +86,7 @@
 
   # Nix
   nix.settings = {
-    experimental-features = [ "nix-command" ];
+    experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
   };
 
@@ -101,16 +97,9 @@
     options = "--delete-older-than 14d";
   };
 
-  # Git & Shell
-  programs.git = {
-    enable = true;
-    config = {
-      user = {
-        name = "Berkay Yetgin";
-        email = "85676216+Yakrel@users.noreply.github.com";
-      };
-    };
-  };
+  # zRAM: compressed swap in RAM — no partition needed. CachyOS/Omarchy default.
+  zramSwap.enable = true;
+
 
   # User
   users.users.byetgin = {
@@ -122,13 +111,6 @@
 
   # Packages
   nixpkgs.config.allowUnfree = true;
-
-  # Intentionally track NUR main to keep this unstable system bleeding edge.
-  nixpkgs.config.packageOverrides = pkgs: {
-    nur = import (builtins.fetchTarball "https://github.com/nix-community/NUR/archive/main.tar.gz") {
-      inherit pkgs;
-    };
-  };
 
   # System packages
   environment.systemPackages = with pkgs; [
