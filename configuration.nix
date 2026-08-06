@@ -73,7 +73,9 @@
     elisa
     khelpcenter
     kate
+    xterm
   ];
+
   # Audio
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;

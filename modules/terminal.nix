@@ -11,5 +11,6 @@
     bat
     btop
     nvd
+    python3
   ];
 }
