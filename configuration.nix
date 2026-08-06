@@ -73,8 +73,8 @@
     elisa
     khelpcenter
     kate
-    xterm
   ];
+  services.xserver.excludePackages = [ pkgs.xterm ];
 
   # Audio
   services.pulseaudio.enable = false;

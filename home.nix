@@ -3,6 +3,7 @@
     ./modules/home/fish.nix
     ./modules/home/git.nix
     ./modules/home/kitty.nix
+    ./modules/home/plasma.nix
   ];
 
   programs.home-manager.enable = true;

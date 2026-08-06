@@ -1,7 +1,7 @@
 { ... }: {
   # NIXOS_CONFIG: lets nixupdate/nixswitch locate the config directory.
   # Update this if you clone the repo to a different path.
-  home.sessionVariables.NIXOS_CONFIG = "/home/byetgin/nixos-config";
+  home.sessionVariables.NIXOS_CONFIG = "/home/byetgin/Desktop/nixos-config";
 
   programs.fish = {
     enable = true;
