@@ -1,28 +1,28 @@
 # nixos-config
 
-Rolling release NixOS — arch/yay tarzı, her güncellemede en son paketler gelir.  
+Rolling release NixOS — arch/yay style, every update pulls the latest packages.  
 i5-13400F · 32 GB RAM · NixOS Unstable · KDE Plasma 6
 
-## Komutlar
+## Commands
 
 ```bash
-nixupdate   # flake güncelle + rebuild + değişiklikleri göster
-nixswitch   # sadece rebuild (flake güncellemeden)
+nixupdate   # update flake + rebuild + show what changed
+nixswitch   # rebuild only (without updating the flake)
 ```
 
-## Sıfırdan Kurulum
+## Fresh Install
 
-NixOS minimal unstable ISO'sundan:
+From a NixOS minimal unstable ISO:
 
 ```bash
 curl -L nixos.byetgin.com/install.sh | sudo sh
 ```
 
-Disk silinir, btrfs subvol'leri oluşturulur, sistem kurulur.  
-Kurulumdan önce `flake.nix`'teki `nixosVersion` yeni ISO versiyonuyla eşleşiyor mu kontrol et.
+Wipes the disk, creates btrfs subvolumes, installs the system.  
+Before running, verify `nixosVersion` in `flake.nix` matches the ISO version.
 
-## Notlar
+## Notes
 
-**`@snapshots` subvol zorunlu** — `/home/.snapshots` btrfs subvolume olmalı, klasör olursa snapshot içinde snapshot oluşur, snapper bozulur.
+**`@snapshots` subvol is required** — `/home/.snapshots` must be a btrfs subvolume, not a plain directory. Otherwise snapshots nest inside each other and snapper breaks.
 
-**`stateVersion`** — `flake.nix`'te tek yerde tanımlı (`nixosVersion`). Çalışan sistemde değiştirilmez; sadece yeni ISO ile sıfırdan kurulumda güncellenir.
+**`stateVersion`** — defined once in `flake.nix` (`nixosVersion`). Never change on a running system; only update on a fresh install with a new ISO.

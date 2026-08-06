@@ -2,10 +2,10 @@
 - Never `git commit` or `git push` without explicit user approval
 
 ## Goal
-- Rolling release, arch/yay tarzı: her `nixupdate` en son paketleri getirir, pin yok
-- Flake var ama versiyon kilitlemek için değil — disko ile tek komutlu kurulum için zorunlu
-- NUR main branch'ten çekiliyor, sha256 pin'i yok — intentional
+- Rolling release, arch/yay style: every `nixupdate` pulls the latest packages, no pin
+- Flake exists not for version locking — required for single-command install via disko
+- NUR pulled from main branch, no sha256 pin — intentional
 
 ## Version
-- `nixosVersion` flake.nix'te tek yerde tanımlı → configuration.nix + home.nix buradan alır
-- Yeni ISO ile sıfırdan kurulumda sadece flake.nix'teki `nixosVersion` değiştirilir
+- `nixosVersion` is defined once in `flake.nix` → consumed by configuration.nix + home.nix
+- On a fresh install with a new ISO: only change `nixosVersion` in `flake.nix`
