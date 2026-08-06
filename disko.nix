@@ -40,7 +40,7 @@
               # Must be a separate subvol — otherwise snapshots nest inside each other.
               "@snapshots" = {
                 mountpoint   = "/home/.snapshots";
-                mountOptions = [ "compress=zstd" ];
+                mountOptions = [ "compress=zstd" "noatime" ];
               };
             };
           };
