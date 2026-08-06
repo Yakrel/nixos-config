@@ -55,13 +55,15 @@
       SYNC_ACL = true;
       TIMELINE_CREATE = true;
       TIMELINE_CLEANUP = true;
-      TIMELINE_LIMIT_HOURLY = 6;
-      TIMELINE_LIMIT_DAILY = 3;
-      TIMELINE_LIMIT_WEEKLY = 2;
-      TIMELINE_LIMIT_MONTHLY = 1;
-      TIMELINE_LIMIT_YEARLY = 0;
+      TIMELINE_LIMIT_HOURLY  = 3;
+      TIMELINE_LIMIT_DAILY   = 2;
+      TIMELINE_LIMIT_WEEKLY  = 1;
+      TIMELINE_LIMIT_MONTHLY = 0;
+      TIMELINE_LIMIT_YEARLY  = 0;
     };
   };
+  # Weekly TRIM batch — safer and more predictable than discard=async on NVMe.
+  services.fstrim.enable = true;
 
   services.printing.enable = true;
 
