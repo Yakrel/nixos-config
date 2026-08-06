@@ -1,5 +1,5 @@
 # Disk layout: nvme0n1 — 1G EFI boot + btrfs root
-# Subvolumes: @ (root)  @home  @nix (excluded from snapper)  @snapshots (/home/.snapshots)
+# Subvolumes: @ (root)  @home  @nix (disk accounting + noatime isolation)  @snapshots (/home/.snapshots)
 # No swap — zRAM is used instead (see configuration.nix)
 { ... }: {
   disko.devices.disk.main = {
@@ -30,7 +30,7 @@
               };
               "@home" = {
                 mountpoint   = "/home";
-                mountOptions = [ "compress=zstd" ];
+                mountOptions = [ "compress=zstd" "noatime" ];
               };
               "@nix" = {
                 mountpoint   = "/nix";
