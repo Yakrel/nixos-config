@@ -14,9 +14,15 @@
     nur.url = "github:nix-community/NUR";
   };
 
-  outputs = { nixpkgs, home-manager, disko, nur, ... }: {
+  outputs = { nixpkgs, home-manager, disko, nur, ... }:
+  let
+    # Fresh install only — update this when reinstalling from a new ISO.
+    # Never change on a running system (breaks stateful service compatibility).
+    nixosVersion = "26.11";
+  in {
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
+      specialArgs = { inherit nixosVersion; };
       modules = [
         # NUR overlay — as a flake input instead of builtins.fetchTarball
         { nixpkgs.overlays = [ nur.overlays.default ]; }
@@ -30,6 +36,7 @@
             useUserPackages    = true;
             users.byetgin      = import ./home.nix;
             backupFileExtension = "bak";
+            extraSpecialArgs   = { inherit nixosVersion; };
           };
         }
       ];

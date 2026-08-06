@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, nixosVersion, ... }:
 
 {
   imports = [
@@ -123,7 +123,6 @@
     thunderbird
   ];
 
-  # Compatibility baseline from the initial installation; do not update it
-  # when updating NixOS.
-  system.stateVersion = "26.11";
+  # Set in flake.nix — change only on fresh installs, never on a running system.
+  system.stateVersion = nixosVersion;
 }
