@@ -120,7 +120,7 @@ done
 while [[ -z "$SMB_PASS" ]]; do
   read -r -s -p "SMB password: " SMB_PASS </dev/tty
   echo
- done
+done
 install -d -m 0700 /mnt/etc/samba
 printf 'username=%s\npassword=%s\n' "$SMB_USER" "$SMB_PASS" > /mnt/etc/samba/homelab.credentials
 chmod 0600 /mnt/etc/samba/homelab.credentials
