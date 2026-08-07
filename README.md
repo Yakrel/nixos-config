@@ -17,8 +17,10 @@ nixswitch   # rebuild current config immediately without updating inputs
 Use a 26.11pre NixOS minimal unstable ISO. `system.stateVersion` / `home.stateVersion` stay at `26.11`; the exact ISO build number is not a stateVersion.
 
 ```bash
-curl -fsSL https://nixos.byetgin.com/install.sh | sudo bash
+curl -fL https://nixos.byetgin.com/install.sh|sudo bash
 ```
+
+The repository is public, so the live ISO does not need Git, a GitHub login, or a token. Nix fetches the flake directly.
 
 The installer:
 
@@ -26,7 +28,8 @@ The installer:
 2. fetches/evaluates the flake before touching any disk,
 3. requires typing `ERASE` through `/dev/tty`,
 4. formats only the verified 2TB system disk,
-5. installs NixOS and asks for the `byetgin` password.
+5. installs NixOS,
+6. prepares `/etc/nixos` as a symlink to the canonical user checkout and asks for the `byetgin` password.
 
 The existing 1TB NVMe and 480GB SATA Btrfs disks are never disko targets. They are mounted after boot at:
 
@@ -42,33 +45,78 @@ Homelab SMB shares are lazy-mounted so an unavailable server cannot hold up boot
 /data/fastpool-config -> //192.168.1.102/fastpool-config
 ```
 
-> The one-line installer references `github:Yakrel/nixos-config`. Nix must be able to access that repository. If the repository is private and no GitHub access token is configured, the installer will stop during preflight **before erasing the disk**.
+## Config checkout after first boot
+
+The canonical editable checkout is:
+
+```text
+/home/byetgin/Desktop/nixos-config
+```
+
+The installer creates:
+
+```text
+/etc/nixos -> /home/byetgin/Desktop/nixos-config
+```
+
+so there is only one configuration tree, not a second copy under `/etc`.
+
+After the first graphical login:
+
+```bash
+git clone https://github.com/Yakrel/nixos-config.git ~/Desktop/nixos-config
+```
+
+After that, normal config work is simply Git + Nix:
+
+```bash
+cd ~/Desktop/nixos-config
+git pull
+nixswitch
+```
+
+Use `nixupdate` when you also want to advance the rolling package/input versions.
 
 ## flake.lock and rolling updates
 
 `flake.nix` follows rolling inputs such as `nixos-unstable`; `flake.lock` records the exact revisions currently selected. Keeping `flake.lock` in Git does **not** stop rolling updates — `nixupdate` advances it whenever you choose to update.
 
-After the first install/clone, create the initial lock file and commit it:
-
-```bash
-nix flake lock
-git add flake.lock
-git commit -m "lock flake inputs"
-```
-
-Normal update flow:
+The first `nixupdate` after cloning creates the initial `flake.lock` and a new boot generation:
 
 ```text
 nixupdate
-  -> flake.lock advances
+  -> flake.lock is created/advanced
   -> new NixOS boot generation is built
   -> reboot into the new generation
   -> if everything works, commit flake.lock
 ```
 
-If the new generation is bad, choose the previous NixOS generation in systemd-boot. If the bad `flake.lock` was not committed yet, restore it with Git before rebuilding.
+Then save the known-good checkpoint:
+
+```bash
+git add flake.lock
+git commit -m "lock working system"
+git push
+```
+
+If a new generation is bad, choose the previous NixOS generation in systemd-boot. If the bad `flake.lock` was not committed yet, restore it with Git before rebuilding.
 
 Nix GC retains unreachable store paths for 30 days to leave a larger rollback window.
+
+## Desktop policy
+
+Plasma stays functional but duplicate applications are excluded where another chosen application already covers the job:
+
+```text
+Terminal    Kitty + Fish     (no Konsole, no xterm, no Alacritty)
+Editor      VS Code          (no Kate)
+PDF         Brave            (no Okular)
+Packages    Nix config       (no Discover)
+Mail        Thunderbird      (KDE PIM/Akonadi disabled)
+Media       Jellyfin/Brave   (no Elisa)
+```
+
+Breeze Dark is written directly to KDE's config from Home Manager without an extra Plasma configuration framework. Night Light is enabled in automatic sunset-to-sunrise mode with KDE/GeoClue.
 
 ## Notes
 
