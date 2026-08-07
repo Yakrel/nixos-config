@@ -96,32 +96,40 @@ Before touching the disk, the installer:
 
 1. verifies the exact Samsung 990 PRO by stable `/dev/disk/by-id` + serial,
 2. clones this public repository to a temporary directory on the live ISO,
-3. runs `nix flake lock` there — creating an initial lock only when needed and never intentionally advancing existing locked revisions,
-4. evaluates the locked NixOS configuration,
-5. builds/downloads both the locked Disko script and the complete locked NixOS system closure.
+3. creates an initial `flake.lock` only when the repository does not have one,
+4. if a committed `flake.lock` already exists, verifies that bootstrap does not modify it,
+5. evaluates the exact locked NixOS configuration,
+6. builds/downloads both the locked Disko script and the complete locked NixOS system closure.
 
-Only after all of those steps succeed does it show the destructive `ERASE` prompt. After confirmation it:
+Once those checks/builds succeed, the installer automatically erases/formats the already verified Samsung system disk; there is no separate `ERASE` confirmation. It then:
 
 1. runs the already-built `config.system.build.diskoScript`,
 2. installs the already-built system closure with `nixos-install --system`, so the flake is not re-resolved after the disk is erased,
 3. copies the exact Git checkout used for installation — including `.git` and its `flake.lock` — to `~/Desktop/nixos-config`,
 4. changes that checkout to `byetgin:users`,
 5. links `/etc/nixos` to the Desktop checkout,
-6. asks for the `byetgin` password.
+6. asks interactively for the `byetgin` password through `/dev/tty`.
 
-The existing 1TB NVMe and 480GB SATA data disks are never Disko targets.
+The exact by-id + serial check is the destructive safety boundary. The existing 1TB NVMe and 480GB SATA data disks are never Disko targets.
 
-The installer does **not** automatically stage, commit or push `flake.lock`. If the first installation had to create or change the lock, the installed checkout contains that exact file. After the first successful boot, review and save the known-good checkpoint:
+### After first boot
+
+For the very first installation, the repository may not yet contain a committed `flake.lock`. After confirming the desktop works, save that exact known-good input snapshot and then take a clean `/home` baseline:
 
 ```bash
 cd ~/Desktop/nixos-config
 git status
 git add flake.lock
-git commit -m "chore: update flake inputs (YYYY-MM-DD)"
+git commit -m "chore: save initial flake lock (YYYY-MM-DD)"
 git push
+
+sudo snapper -c home create --description "Fresh NixOS baseline"
+sudo snapper -c home list
 ```
 
-On future reinstalls, a committed `flake.lock` is cloned from the repository first. `nix flake lock` keeps existing locked revisions and only adds missing entries; normal version advancement remains an explicit `nixupdate` action.
+The manual baseline has no timeline cleanup tag, so it is kept independently of the hourly/daily/weekly timeline cleanup policy.
+
+On future reinstalls, the committed `flake.lock` comes down with `git clone` and is used as-is. The installer runs the lock bootstrap only as a consistency check and aborts before touching the disk if that committed lock would change. In other words, reinstalling one month later restores the **last committed known-good lock**, not whatever happens to be newest in `nixos-unstable` that day. Normal version advancement remains an explicit `nixupdate` action followed by reboot/verification and a new lock commit.
 
 ## Config layout and permissions
 
@@ -143,7 +151,7 @@ The installer creates:
 
 ## flake.lock in one paragraph
 
-`flake.nix` says which rolling inputs to follow, such as `nixos-unstable`. `flake.lock` records the exact revisions currently selected. Fresh install runs `nix flake lock` on a writable temporary Git checkout so a missing initial lock can be created before any disk operation; existing locked revisions are preserved. That exact checkout and lock are used to build Disko and NixOS and are then copied to the installed system. `nixapply` uses the current lock without advancing it. `nixupdate` deliberately runs `nix flake update`, which is the action that advances those revisions.
+`flake.nix` says which rolling inputs to follow, such as `nixos-unstable`. `flake.lock` records the exact revisions currently selected. If the repository has no lock yet, the first install creates one in its temporary writable checkout and uses it for the entire install. Once that lock is committed, every later reinstall clones and uses that committed snapshot exactly; bootstrap is allowed to verify it but not silently change it. `nixapply` uses the current lock without advancing it. `nixupdate` deliberately runs `nix flake update`, which advances those revisions; after a successful reboot, commit the changed lock to make that newer snapshot the next known-good reinstall point.
 
 ## Storage
 
@@ -201,7 +209,7 @@ JetBrains Mono Nerd Font
 
 CachyOS's Fish configuration uses Pure for the clean two-line `directory + git branch` / `❯` prompt, so this config uses the Nixpkgs `fishPlugins.pure` package instead of Starship.
 
-Git and GitHub CLI are both installed system-wide. Home Manager manages the user's Git settings without installing a second Git package.
+Git and GitHub CLI are both installed system-wide. Home Manager manages the user's Git settings without installing a second Git package. `pciutils` is also kept as a lightweight diagnostic toolset so commands such as `lspci` are always available when checking hardware/drivers.
 
 ## Notes
 
