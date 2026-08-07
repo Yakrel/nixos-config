@@ -11,9 +11,10 @@
 - NUR follows its flake input and is advanced together with the other inputs
 
 ## Daily workflow
-- `nixpull`: update only the Git checkout from GitHub using fast-forward-only pull; do not resolve new Nix input revisions
+- Use normal Git commands for repository synchronization; do not invent a `nixpull` alias or hide Git operations behind Nix-named aliases
 - `nixapply`: rebuild/apply the current configuration using the existing `flake.lock`; use this after adding/removing packages, changing KDE/Home Manager settings, services, mounts, aliases, etc.
 - `nixupdate`: intentionally advance flake inputs (`nix flake update`) and build the next boot generation; this is the command that normally changes `flake.lock`
+- Prefer a clean Git working tree before `git pull`; local work may be committed without being pushed first, but do not discard or overwrite local changes automatically
 
 ## flake.lock policy
 - Fresh install may run `nix flake lock` only to ensure a lock exists. If no lock exists yet, this resolves the current inputs and creates the initial snapshot; if a committed lock already exists, do not advance its existing revisions during bootstrap.
