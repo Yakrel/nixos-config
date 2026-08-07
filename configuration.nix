@@ -117,6 +117,7 @@
   environment.systemPackages = with pkgs; [
     git
     gh
+    pciutils
     nur.repos.jeffguorg.oh-my-pi-bin
     brave-origin
     vscode

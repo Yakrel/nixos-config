@@ -53,12 +53,22 @@ echo "==> [2/7] Cloning and locking the install configuration..."
 git clone --quiet "$REPO_URL" "$WORK_DIR"
 echo "Config commit: $(git -C "$WORK_DIR" rev-parse --short HEAD)"
 
-if [[ -f "$WORK_DIR/flake.lock" ]]; then
-  echo "Using the repository flake.lock; only missing lock entries may be added."
+LOCK_WAS_COMMITTED=false
+if git -C "$WORK_DIR" ls-files --error-unmatch flake.lock >/dev/null 2>&1; then
+  LOCK_WAS_COMMITTED=true
+  echo "Using the committed flake.lock exactly."
 else
   echo "No flake.lock is committed yet; creating the initial lock snapshot."
 fi
+
 nix_cmd flake lock "$LOCAL_FLAKE"
+
+if [[ "$LOCK_WAS_COMMITTED" == true ]] && ! git -C "$WORK_DIR" diff --quiet -- flake.lock; then
+  echo
+  echo "ERROR: The committed flake.lock would change during fresh-install bootstrap."
+  echo "Refusing to install an unverified input set. Update and commit flake.lock from a running system first."
+  exit 1
+fi
 
 echo "==> [3/7] Building the exact locked installer artifacts before touching the disk..."
 if ! nix_cmd eval --raw "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.system.build.toplevel.drvPath" >/dev/null; then
@@ -76,19 +86,8 @@ echo "Locked install artifacts are ready."
 echo "Disko:  $DISKO_SCRIPT"
 echo "System: $SYSTEM_PATH"
 echo
-printf '%s\n' \
-  "WARNING: THE FOLLOWING DISK WILL BE COMPLETELY ERASED:" \
-  "  $INSTALL_DISK" \
-  "  $ACTUAL_MODEL" \
-  "  Serial: $ACTUAL_SERIAL" \
-  "" \
-  "The 1TB NVMe and 480GB SATA data disks are NOT installer targets." \
-  "Type ERASE to continue:"
-read -r confirmation </dev/tty
-if [[ "$confirmation" != "ERASE" ]]; then
-  echo "Cancelled. No disk changes were made."
-  exit 1
-fi
+echo "Verified target: $INSTALL_DISK ($ACTUAL_MODEL, serial $ACTUAL_SERIAL)"
+echo "Beginning automatic erase/install; no additional disk confirmation is requested."
 
 echo "==> [4/7] Formatting and mounting the verified system disk..."
 bash "$DISKO_SCRIPT"
@@ -108,11 +107,13 @@ ln -s "$CONFIG_DIR" /mnt/etc/nixos
 nixos-enter --root /mnt -c 'chown -R byetgin:users /home/byetgin/Desktop/nixos-config'
 
 echo "==> [7/7] Setting password for user byetgin..."
-nixos-enter --root /mnt -c 'passwd byetgin'
+# install.sh is normally executed via `curl | sudo bash`, so stdin is the pipe.
+# Explicitly attach passwd to the controlling terminal so it reads the keyboard.
+nixos-enter --root /mnt -c 'passwd byetgin' </dev/tty
 
 echo
 echo "Done. Reboot when ready."
 echo "Config repo: $CONFIG_DIR (owned by byetgin)"
 echo "/etc/nixos -> $CONFIG_DIR"
 echo "The installed checkout contains the exact flake.lock used for this installation."
-echo "After a successful boot, review git status and commit/push flake.lock if it is new or changed."
+echo "After a successful boot, review git status and commit/push flake.lock if it is new."
