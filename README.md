@@ -5,24 +5,25 @@ i5-13400F · 32 GB RAM · AMD RX 9060 XT · Samsung 990 PRO 2TB · NixOS Unstabl
 
 ## Everyday commands
 
-There are three intentionally separate commands:
+Git stays Git; Nix only needs two helper aliases:
 
 ```bash
-nixpull    # pull only this Git config repo
-nixapply   # apply the current config exactly as locked
-nixupdate  # advance flake.lock to current rolling inputs + build next boot generation
+git pull    # get config/history changes from GitHub
+nixapply    # apply the current config exactly as locked
+nixupdate   # advance flake.lock to current rolling inputs + build next boot generation
 ```
 
 The mental model is:
 
 ```text
-nixpull
-  GitHub config changes -> local repo
-  flake.lock is not advanced by Nix
+git pull
+  GitHub repo changes -> local repo
+  this is normal Git; Nix does not resolve newer inputs by itself
 
 nixapply
   current files + current flake.lock -> running system
-  no package/input advancement
+  use after adding/removing packages, KDE/Home Manager changes, services, mounts, aliases, etc.
+  flake.lock is not advanced
 
 nixupdate
   nixpkgs/Home Manager/Disko/NUR -> newer revisions
@@ -31,17 +32,23 @@ nixupdate
   reboot to activate it
 ```
 
-Typical config-only workflow:
+Typical config-only change:
 
 ```bash
-nixpull
+# edit configuration.nix / modules / home config
 nixapply
 ```
 
-Typical rolling-upgrade workflow:
+If the config changed on GitHub first:
 
 ```bash
-nixpull       # optional: first get config changes from GitHub
+git pull
+nixapply
+```
+
+Typical rolling upgrade:
+
+```bash
 nixupdate
 reboot
 ```
@@ -52,7 +59,7 @@ After a successful reboot, check and save the known-good lock:
 cd ~/Desktop/nixos-config
 git status
 git add flake.lock
-git commit -m "update flake lock"
+git commit -m "chore: update flake inputs (YYYY-MM-DD)"
 git push
 ```
 
@@ -61,6 +68,19 @@ If the new generation is bad, boot the previous NixOS generation from systemd-bo
 ```bash
 git -C ~/Desktop/nixos-config restore flake.lock
 ```
+
+### Local Git changes before `git pull`
+
+You do not have to push local work before pulling. A push only publishes your commits to GitHub. However, keep the working tree clean before pulling when possible:
+
+```bash
+git status
+git add .
+git commit -m "describe config change"
+git pull
+```
+
+You may push that local commit before or after the pull as appropriate. If you have uncommitted edits and the remote changed the same files, Git may stop and ask you to resolve the situation; it will not safely invent the intended result for you.
 
 ## Fresh Install
 
@@ -102,7 +122,7 @@ The installer creates:
 /etc/nixos -> /home/byetgin/Desktop/nixos-config
 ```
 
-`/etc/nixos` itself is only a root-created symbolic link. Following that link reaches the same user-owned files, so editing or running `git pull` from `/etc/nixos` does not create a second copy and should not require sudo.
+`/etc/nixos` itself is only a root-created symbolic link. Following that link reaches the same user-owned files, so editing or running Git commands from `/etc/nixos` does not create a second copy and should not require sudo.
 
 ## flake.lock in one paragraph
 
