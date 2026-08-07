@@ -4,6 +4,7 @@
     ./modules/home/git.nix
     ./modules/home/kitty.nix
     ./modules/home/plasma.nix
+    ./modules/home/places.nix
   ];
 
   programs.home-manager.enable = true;

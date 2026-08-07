@@ -1,7 +1,7 @@
 ## Rules
 - Never `git commit` or `git push` without explicit user approval
 - Never put credentials, SMB usernames, passwords or other secrets in the repository
-- Use KDE/Dolphin KIO (`smb://...`) for the homelab shares by default; do not add system-level CIFS mounts or credential files unless the user explicitly asks for them
+- Use KDE/Dolphin KIO (`smb://...`) for the homelab shares by default; seed `datapool` and `fastpool-config` into Dolphin Places while preserving the user's mutable `user-places.xbel`; do not add system-level CIFS mounts or credential files unless the user explicitly asks for them
 - Keep README operational and concise: install, first-boot, update, rollback and essential commands; do not duplicate implementation details already clear from the Nix code
 - Never target an install disk by volatile names such as `/dev/nvme0n1`; use the verified stable by-id path
 - Keep the system GPT partition labels explicit as `nixos-boot` and `nixos-root`; do not rely on Disko's generated `disk-main-*` defaults
