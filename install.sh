@@ -6,8 +6,7 @@ set -euo pipefail
 
 FLAKE_URI="github:Yakrel/nixos-config"
 FLAKE_CONFIG="${FLAKE_URI}#nixos"
-CONFIG_DIR="/home/byetgin/.config/nixos"
-DESKTOP_LINK="/home/byetgin/Desktop/nixos-config"
+CONFIG_DIR="/home/byetgin/Desktop/nixos-config"
 INSTALL_DISK_BY_ID="/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_with_Heatsink_2TB_S7DRNJ0Y104863E"
 EXPECTED_SERIAL="S7DRNJ0Y104863E"
 
@@ -74,21 +73,19 @@ nix_cmd run github:nix-community/disko -- \
 echo "==> [4/9] Installing the remote NixOS configuration..."
 nixos-install --no-root-passwd --flake "$FLAKE_CONFIG"
 
-echo "==> [5/9] Cloning the canonical config repo with the installed system's Git..."
-nixos-enter --root /mnt -c 'install -d -m 0755 -o byetgin -g users /home/byetgin/.config /home/byetgin/Desktop'
-nixos-enter --root /mnt -c 'runuser -u byetgin -- git clone https://github.com/Yakrel/nixos-config.git /home/byetgin/.config/nixos'
+echo "==> [5/9] Cloning the editable config repo with the installed system's Git..."
+nixos-enter --root /mnt -c 'install -d -m 0755 -o byetgin -g users /home/byetgin/Desktop'
+nixos-enter --root /mnt -c 'runuser -u byetgin -- git clone https://github.com/Yakrel/nixos-config.git /home/byetgin/Desktop/nixos-config'
 
-echo "==> [6/9] Advancing and staging the initial flake.lock..."
-nixos-enter --root /mnt -c 'runuser -u byetgin -- sh -c "cd /home/byetgin/.config/nixos && nix --extra-experimental-features \"nix-command flakes\" flake update && git add flake.lock"'
+echo "==> [6/9] Creating/staging the initial flake.lock..."
+nixos-enter --root /mnt -c 'runuser -u byetgin -- sh -c "cd /home/byetgin/Desktop/nixos-config && nix --extra-experimental-features \"nix-command flakes\" flake lock && git add flake.lock"'
 
-echo "==> [7/9] Creating config shortcuts..."
+echo "==> [7/9] Linking /etc/nixos to the Git checkout..."
 rm -rf /mnt/etc/nixos
 ln -s "$CONFIG_DIR" /mnt/etc/nixos
-ln -s "$CONFIG_DIR" "/mnt$DESKTOP_LINK"
-chown -h 1000:100 "/mnt$DESKTOP_LINK"
 
-echo "==> [8/9] Building the first boot generation from that exact lock..."
-nixos-enter --root /mnt -c 'nixos-rebuild boot --flake /home/byetgin/.config/nixos#nixos'
+echo "==> [8/9] Building the first boot generation from that lock..."
+nixos-enter --root /mnt -c 'nixos-rebuild boot --flake /home/byetgin/Desktop/nixos-config#nixos'
 
 echo "==> [9/9] Setting password for user byetgin..."
 nixos-enter --root /mnt -c 'passwd byetgin'
@@ -96,5 +93,5 @@ nixos-enter --root /mnt -c 'passwd byetgin'
 echo
 echo "Done. Reboot when ready."
 echo "Config repo: $CONFIG_DIR"
-echo "Shortcuts:   /etc/nixos and $DESKTOP_LINK"
-echo "flake.lock is already staged; after a successful boot, commit and push it."
+echo "/etc/nixos -> $CONFIG_DIR"
+echo "flake.lock is staged if it was newly created; after a successful boot, commit and push it."
