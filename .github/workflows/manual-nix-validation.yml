@@ -1,9 +1,6 @@
 name: Manual Nix Validation
 
 on:
-  # Temporary trigger used only to validate this workflow before it becomes manual-only.
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
