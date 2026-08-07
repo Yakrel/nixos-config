@@ -9,6 +9,10 @@
 - `nixupdate` builds a new boot generation; it must not replace the running graphics/kernel stack with `switch`
 - NUR follows its flake input and is advanced together with the other inputs
 
+## Config layout
+- The only real editable Git checkout is `/home/byetgin/Desktop/nixos-config`
+- `/etc/nixos` is a symlink to that checkout; never maintain a second config copy
+
 ## Rollback model
 - NixOS generations recover the operating-system generation
 - Git + `flake.lock` recover the exact declarative input revisions
