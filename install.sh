@@ -4,7 +4,8 @@
 #   curl -fsSL https://nixos.byetgin.com/install.sh | sudo bash
 set -euo pipefail
 
-FLAKE="github:Yakrel/nixos-config#nixos"
+FLAKE_URI="github:Yakrel/nixos-config"
+FLAKE_CONFIG="${FLAKE_URI}#nixos"
 INSTALL_DISK_BY_ID="/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_with_Heatsink_2TB_S7DRNJ0Y104863E"
 EXPECTED_SERIAL="S7DRNJ0Y104863E"
 
@@ -41,7 +42,7 @@ echo "Size:        $ACTUAL_SIZE"
 echo
 
 echo "==> [2/5] Validating remote flake before touching the disk..."
-if ! nix_cmd eval --raw "$FLAKE#nixosConfigurations.nixos.config.system.build.toplevel.drvPath" >/dev/null; then
+if ! nix_cmd eval --raw "${FLAKE_URI}#nixosConfigurations.nixos.config.system.build.toplevel.drvPath" >/dev/null; then
   echo
   echo "ERROR: The NixOS flake could not be fetched/evaluated."
   echo "No disk changes were made."
@@ -50,8 +51,8 @@ if ! nix_cmd eval --raw "$FLAKE#nixosConfigurations.nixos.config.system.build.to
 fi
 
 echo
-echo=""
-printf '%s\n' "WARNING: THE FOLLOWING DISK WILL BE COMPLETELY ERASED:" \
+printf '%s\n' \
+  "WARNING: THE FOLLOWING DISK WILL BE COMPLETELY ERASED:" \
   "  $INSTALL_DISK" \
   "  $ACTUAL_MODEL" \
   "  Serial: $ACTUAL_SERIAL" \
@@ -67,10 +68,10 @@ fi
 echo "==> [3/5] Formatting the verified system disk with disko..."
 nix_cmd run github:nix-community/disko -- \
   --mode destroy,format,mount \
-  --flake "$FLAKE"
+  --flake "$FLAKE_CONFIG"
 
 echo "==> [4/5] Installing NixOS..."
-nixos-install --no-root-passwd --flake "$FLAKE"
+nixos-install --no-root-passwd --flake "$FLAKE_CONFIG"
 
 echo "==> [5/5] Setting password for user byetgin..."
 nixos-enter --root /mnt -c 'passwd byetgin'
