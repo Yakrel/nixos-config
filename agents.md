@@ -1,6 +1,8 @@
 ## Rules
 - Never `git commit` or `git push` without explicit user approval
 - Never put credentials or secrets in the repository
+- SMB authentication uses `/etc/samba/homelab.credentials` with username `Yakrel`; keep that file root-only and outside Git
+- Keep README operational and concise: install, first-boot, update, rollback and essential commands; do not duplicate implementation details already clear from the Nix code
 - Never target an install disk by volatile names such as `/dev/nvme0n1`; use the verified stable by-id path
 - Never run `nix flake update` implicitly as part of an unrelated config change; advancing input revisions must be an explicit rolling-update action
 
