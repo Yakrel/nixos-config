@@ -3,6 +3,7 @@
 {
   imports = [
     ./modules/hardware.nix
+    ./modules/storage.nix
     ./modules/terminal.nix
   ];
 
@@ -70,6 +71,7 @@
     khelpcenter
     kate
   ];
+  # xterm is part of the default X server package set, not the Plasma package set.
   services.xserver.excludePackages = [ pkgs.xterm ];
 
   services.pulseaudio.enable = false;
@@ -96,6 +98,7 @@
 
   users.users.byetgin = {
     isNormalUser = true;
+    uid = 1000;
     description = "Berkay Yetgin";
     extraGroups = [ "networkmanager" "wheel" ];
     shell = pkgs.fish;
