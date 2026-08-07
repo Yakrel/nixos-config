@@ -15,7 +15,11 @@ path.parent.mkdir(parents=True, exist_ok=True)
 if path.exists():
     text = path.read_text(encoding="utf-8")
 else:
-    text = '<?xml version="1.0" encoding="UTF-8"?>\n<xbel version="1.0">\n</xbel>\n'
+    text = '''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xbel>
+<xbel xmlns:mime="http://www.freedesktop.org/standards/shared-mime-info" xmlns:kdepriv="http://www.kde.org/kdepriv" xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks" version="1.0">
+</xbel>
+'''
 
 places = [
     ("datapool", "smb://192.168.1.102/datapool"),
@@ -34,7 +38,16 @@ for title, url in places:
     bookmark = (
         f'  <bookmark href="{escape(url, quote=True)}">\n'
         f'    <title>{escape(title)}</title>\n'
-        f'  </bookmark>\n'
+        '    <info>\n'
+        '      <metadata owner="http://freedesktop.org">\n'
+        '        <bookmark:icon name="folder-network"/>\n'
+        '      </metadata>\n'
+        '      <metadata owner="http://www.kde.org">\n'
+        '        <isSystemItem>false</isSystemItem>\n'
+        '        <IsHidden>false</IsHidden>\n'
+        '      </metadata>\n'
+        '    </info>\n'
+        '  </bookmark>\n'
     )
     text = text[:closing] + bookmark + text[closing:]
     changed = True
