@@ -1,4 +1,4 @@
-{ config, pkgs, nixosVersion, ... }:
+{ config, pkgs, nixosVersion, jelliumDesktop, ... }:
 
 {
   imports = [
@@ -122,7 +122,7 @@
     brave-origin
     vscode
     vlc
-    jellium-desktop
+    jelliumDesktop
     obsidian
     thunderbird
   ];
