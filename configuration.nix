@@ -3,6 +3,7 @@
 {
   imports = [
     ./modules/hardware.nix
+    ./modules/storage.nix
     ./modules/terminal.nix
   ];
 
@@ -35,14 +36,11 @@
   services.xserver.xkb.layout = "tr";
   console.keyMap = "trq";
 
-  # Use Omarchy's JetBrains Mono Nerd Font only for monospace applications.
   fonts = {
     packages = [ pkgs.nerd-fonts.jetbrains-mono ];
     fontconfig.defaultFonts.monospace = [ "JetBrainsMono Nerd Font" ];
   };
 
-
-  # Keep a small timeline of /home snapshots for recovering user files.
   services.snapper = {
     snapshotInterval = "hourly";
     cleanupInterval = "1d";
@@ -54,29 +52,36 @@
       SYNC_ACL = true;
       TIMELINE_CREATE = true;
       TIMELINE_CLEANUP = true;
-      TIMELINE_LIMIT_HOURLY  = 3;
-      TIMELINE_LIMIT_DAILY   = 2;
-      TIMELINE_LIMIT_WEEKLY  = 1;
+      TIMELINE_LIMIT_HOURLY = 3;
+      TIMELINE_LIMIT_DAILY = 2;
+      TIMELINE_LIMIT_WEEKLY = 1;
       TIMELINE_LIMIT_MONTHLY = 0;
-      TIMELINE_LIMIT_YEARLY  = 0;
+      TIMELINE_LIMIT_YEARLY = 0;
     };
   };
 
   services.printing.enable = true;
 
-  # KDE Plasma
   services.xserver.enable = true;
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
+
+  # Thunderbird replaces KDE PIM; avoid pulling Akonadi/KDEPIM runtime.
+  programs.kde-pim.enable = false;
+
+  # Keep one application per job where practical.
   environment.plasma6.excludePackages = with pkgs.kdePackages; [
-    konsole
-    elisa
+    konsole   # Kitty
+    kate      # VS Code
+    elisa     # Jellyfin Desktop / browser
+    okular    # Brave has a built-in PDF viewer
+    discover  # Packages are managed declaratively with Nix
     khelpcenter
-    kate
   ];
+
+  # xterm is part of the default X server package set, not the Plasma package set.
   services.xserver.excludePackages = [ pkgs.xterm ];
 
-  # Audio
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
@@ -85,38 +90,34 @@
     pulse.enable = true;
   };
 
-  # Nix
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
   };
 
-  # Keep two weeks of rollback history, then collect unreachable store paths.
+  # Keep rollback generations longer. Disk space is cheap on a 2TB NVMe.
   nix.gc = {
     automatic = true;
     dates = "daily";
-    options = "--delete-older-than 14d";
+    options = "--delete-older-than 30d";
   };
 
-  # zRAM: compressed swap in RAM — no partition needed. CachyOS/Omarchy default.
   zramSwap.enable = true;
 
-
-  # User
   users.users.byetgin = {
     isNormalUser = true;
+    uid = 1000;
     description = "Berkay Yetgin";
     extraGroups = [ "networkmanager" "wheel" ];
     shell = pkgs.fish;
   };
 
-  # Packages
   nixpkgs.config.allowUnfree = true;
 
-  # System packages
   environment.systemPackages = with pkgs; [
-    nur.repos.jeffguorg.oh-my-pi-bin
+    git
     gh
+    nur.repos.jeffguorg.oh-my-pi-bin
     brave-origin
     vscode
     jellyfin-desktop
@@ -124,6 +125,5 @@
     thunderbird
   ];
 
-  # Set in flake.nix — change only on fresh installs, never on a running system.
   system.stateVersion = nixosVersion;
 }
