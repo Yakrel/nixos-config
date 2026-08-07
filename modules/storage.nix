@@ -32,13 +32,14 @@
     ];
   };
 
-  # Homelab SMB shares. Guest access keeps credentials out of the repository.
-  # Automount prevents boot delays when the server or network is unavailable.
+  # Homelab SMB shares. Authentication lives in a local root-only credentials
+  # file, never in Git. Automount prevents boot delays when the server/network
+  # is unavailable.
   fileSystems."/data/datapool" = {
     device = "//192.168.1.102/datapool";
     fsType = "cifs";
     options = [
-      "guest"
+      "credentials=/etc/samba/homelab.credentials"
       "uid=1000"
       "gid=100"
       "nofail"
@@ -57,7 +58,7 @@
     device = "//192.168.1.102/fastpool-config";
     fsType = "cifs";
     options = [
-      "guest"
+      "credentials=/etc/samba/homelab.credentials"
       "uid=1000"
       "gid=100"
       "nofail"
