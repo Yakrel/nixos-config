@@ -77,15 +77,19 @@ echo "==> [5/9] Cloning the editable config repo with the installed system's Git
 nixos-enter --root /mnt -c 'install -d -m 0755 -o byetgin -g users /home/byetgin/Desktop'
 nixos-enter --root /mnt -c 'runuser -u byetgin -- git clone https://github.com/Yakrel/nixos-config.git /home/byetgin/Desktop/nixos-config'
 
-echo "==> [6/9] Creating the initial flake.lock..."
-nixos-enter --root /mnt -c 'runuser -u byetgin -- sh -c "cd /home/byetgin/Desktop/nixos-config && nix --extra-experimental-features \"nix-command flakes\" flake lock"'
+echo "==> [6/9] Creating the initial flake.lock with the live ISO Nix..."
+nix_cmd flake lock "path:/mnt$CONFIG_DIR"
+if [[ -e "/mnt$CONFIG_DIR/flake.lock" ]]; then
+  chown 1000:100 "/mnt$CONFIG_DIR/flake.lock"
+fi
 
 echo "==> [7/9] Linking /etc/nixos to the user-owned Git checkout..."
 rm -rf /mnt/etc/nixos
 ln -s "$CONFIG_DIR" /mnt/etc/nixos
 
-echo "==> [8/9] Building the first boot generation from that lock..."
-nixos-enter --root /mnt -c 'nixos-rebuild boot --flake /home/byetgin/Desktop/nixos-config#nixos'
+echo "==> [8/9] Building the first boot generation from that exact lock..."
+# Use path: explicitly so the newly created, still-untracked flake.lock is included.
+nixos-enter --root /mnt -c 'nixos-rebuild boot --flake path:/home/byetgin/Desktop/nixos-config#nixos'
 
 echo "==> [9/9] Setting password for user byetgin..."
 nixos-enter --root /mnt -c 'passwd byetgin'
