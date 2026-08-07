@@ -77,10 +77,10 @@ echo "==> [5/9] Cloning the editable config repo with the installed system's Git
 nixos-enter --root /mnt -c 'install -d -m 0755 -o byetgin -g users /home/byetgin/Desktop'
 nixos-enter --root /mnt -c 'runuser -u byetgin -- git clone https://github.com/Yakrel/nixos-config.git /home/byetgin/Desktop/nixos-config'
 
-echo "==> [6/9] Creating/staging the initial flake.lock..."
-nixos-enter --root /mnt -c 'runuser -u byetgin -- sh -c "cd /home/byetgin/Desktop/nixos-config && nix --extra-experimental-features \"nix-command flakes\" flake lock && git add flake.lock"'
+echo "==> [6/9] Creating the initial flake.lock..."
+nixos-enter --root /mnt -c 'runuser -u byetgin -- sh -c "cd /home/byetgin/Desktop/nixos-config && nix --extra-experimental-features \"nix-command flakes\" flake lock"'
 
-echo "==> [7/9] Linking /etc/nixos to the Git checkout..."
+echo "==> [7/9] Linking /etc/nixos to the user-owned Git checkout..."
 rm -rf /mnt/etc/nixos
 ln -s "$CONFIG_DIR" /mnt/etc/nixos
 
@@ -92,6 +92,6 @@ nixos-enter --root /mnt -c 'passwd byetgin'
 
 echo
 echo "Done. Reboot when ready."
-echo "Config repo: $CONFIG_DIR"
+echo "Config repo: $CONFIG_DIR (owned by byetgin)"
 echo "/etc/nixos -> $CONFIG_DIR"
-echo "flake.lock is staged if it was newly created; after a successful boot, commit and push it."
+echo "After a successful boot, review git status and commit flake.lock if it is new/changed."
