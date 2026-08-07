@@ -28,10 +28,10 @@ The installer then:
 2. requires typing `ERASE` through `/dev/tty`,
 3. formats only the verified 2TB system disk,
 4. installs NixOS,
-5. uses Git from the **installed target system** to clone this repo,
-6. advances and stages `flake.lock`,
-7. creates both config shortcuts,
-8. builds the first boot generation from that exact lock,
+5. uses Git from the installed target system to clone this repo directly to `~/Desktop/nixos-config`,
+6. runs `nix flake lock` to create any missing lock entries without advancing an existing lock,
+7. stages `flake.lock` if it was newly created/changed,
+8. links `/etc/nixos` to the Desktop Git checkout and builds the first boot generation from that lock,
 9. asks for the `byetgin` password.
 
 The existing 1TB NVMe and 480GB SATA Btrfs disks are never disko targets. They are mounted after boot at:
@@ -53,19 +53,18 @@ Homelab SMB shares are lazy-mounted so an unavailable server cannot hold up boot
 There is one real editable Git checkout:
 
 ```text
-/home/byetgin/.config/nixos
+/home/byetgin/Desktop/nixos-config
 ```
 
-The installer creates two symlinks to it:
+The installer creates one symlink:
 
 ```text
-/etc/nixos                         -> /home/byetgin/.config/nixos
-/home/byetgin/Desktop/nixos-config -> /home/byetgin/.config/nixos
+/etc/nixos -> /home/byetgin/Desktop/nixos-config
 ```
 
-So Dolphin/Desktop has a convenient `nixos-config` shortcut, `/etc/nixos` keeps the conventional NixOS path, and there are no duplicate configuration trees.
+So editing through `/etc/nixos` or `~/Desktop/nixos-config` changes the exact same files. There is no second configuration copy to keep in sync and no extra canonical directory hidden under `~/.config`.
 
-Normal config work can be done through either symlink or the canonical path:
+Normal config work:
 
 ```bash
 cd ~/Desktop/nixos-config
@@ -73,13 +72,23 @@ git pull
 nixswitch
 ```
 
+Because `/etc/nixos` is only a symlink, a `git pull` from either path updates the same repository. You never need to pull twice.
+
 Use `nixupdate` when you also want to advance the rolling package/input versions.
 
 ## flake.lock and rolling updates
 
 `flake.nix` follows rolling inputs such as `nixos-unstable`; `flake.lock` records the exact revisions currently selected. Keeping `flake.lock` in Git does **not** stop rolling updates — `nixupdate` advances it whenever you choose to update.
 
-The installer already creates/updates and stages the initial lock file, then builds the first boot generation from it. After the first successful boot, save that known-good checkpoint:
+On a brand-new repo with no lock file, the installer runs:
+
+```bash
+nix flake lock
+```
+
+This creates the initial lock from the currently resolvable inputs. It is not the normal rolling-update command. If a committed `flake.lock` already exists, `nix flake lock` keeps existing locked revisions and only fills missing entries. Actual version advancement remains explicit through `nixupdate` (`nix flake update`).
+
+After the first successful boot, save the known-good checkpoint if `flake.lock` is staged:
 
 ```bash
 cd ~/Desktop/nixos-config
@@ -131,6 +140,8 @@ JetBrains Mono Nerd Font
 ```
 
 CachyOS's Fish configuration uses Pure for the clean two-line `directory + git branch` / `❯` prompt, so this config uses the Nixpkgs `fishPlugins.pure` package instead of Starship.
+
+Git and GitHub CLI are both installed system-wide. Home Manager manages the user's Git settings without installing a second Git package.
 
 ## Notes
 
