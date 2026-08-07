@@ -1,8 +1,9 @@
 { ... }: {
   programs.git = {
     enable = true;
-    # Git itself is installed system-wide so install.sh can use it inside the
-    # freshly installed target system. Home Manager only owns user config.
+    # Git is installed system-wide for normal workstation use. The fresh
+    # installer uses the Git already available on the NixOS live ISO;
+    # Home Manager owns only the per-user Git configuration.
     package = null;
     settings.user = {
       name = "Berkay Yetgin";
