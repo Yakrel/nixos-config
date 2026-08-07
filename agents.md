@@ -17,9 +17,13 @@
 - Prefer a clean Git working tree before `git pull`; local work may be committed without being pushed first, but do not discard or overwrite local changes automatically
 
 ## flake.lock policy
-- Fresh install may run `nix flake lock` only to ensure a lock exists. If no lock exists yet, this resolves the current inputs and creates the initial snapshot; if a committed lock already exists, do not advance its existing revisions during bootstrap.
-- During fresh install, create the target checkout's lock with the live ISO's working Nix, not a normal-user Nix invocation inside `nixos-enter`; the target nix-daemon is not running yet.
-- Until a newly created `flake.lock` is tracked by Git, an ordinary raw Git flake path may ignore it. The installer's first locked build must therefore use an explicit `path:/home/byetgin/Desktop/nixos-config#nixos` reference (or otherwise ensure the lock is indexed) so the new lock is actually included.
+- Fresh install uses Git from the live NixOS ISO to clone the public repository into a writable temporary directory before any destructive disk operation.
+- Run `nix flake lock` on that temporary checkout. If no lock exists, it creates the initial snapshot; if a committed lock already exists, existing locked revisions must not be advanced and only missing entries may be added.
+- Use an explicit `path:` flake reference for the temporary checkout so a newly created, still-untracked `flake.lock` is included by Nix.
+- Before asking for `ERASE`, evaluate and build both `config.system.build.diskoScript` and `config.system.build.toplevel` from that exact locked checkout. Configuration/fetch/build failures must happen before the disk is modified.
+- Run the built `system.build.diskoScript` instead of fetching a separate latest Disko CLI, so disk formatting uses the same locked Disko module revision as the NixOS configuration.
+- Install the already-built system closure with `nixos-install --system`; do not re-resolve the flake after the disk has been erased.
+- After installation, copy that exact temporary Git checkout, including `.git` and its `flake.lock`, to `/home/byetgin/Desktop/nixos-config`, then make it owned by `byetgin:users`. Do not clone or lock a second time.
 - The installer must not automatically stage, commit or push `flake.lock`; the user saves the checkpoint only after verifying a successful boot.
 - After the first successful boot, commit and push the initial `flake.lock` as the first known-good checkpoint.
 - After every intentional `nixupdate`, reboot into the new generation and verify the system before committing the changed `flake.lock`.
