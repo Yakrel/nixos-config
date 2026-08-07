@@ -21,9 +21,6 @@
       tree = "eza --tree --icons";
       cat = "bat";
 
-      # Pull only declarative config/history from GitHub. Never changes inputs by itself.
-      nixpull = "git -C $NIXOS_CONFIG pull --ff-only";
-
       # Apply the config exactly as currently locked. Does not advance flake.lock.
       nixapply = "sudo nixos-rebuild switch --flake $NIXOS_CONFIG#nixos && nvd diff /run/booted-system /run/current-system";
 
