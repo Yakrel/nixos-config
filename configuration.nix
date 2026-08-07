@@ -121,6 +121,7 @@
     nur.repos.jeffguorg.oh-my-pi-bin
     brave-origin
     vscode
+    vlc
     jellyfin-desktop
     obsidian
     thunderbird
