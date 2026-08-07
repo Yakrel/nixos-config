@@ -80,7 +80,7 @@ git -C ~/Desktop/nixos-config restore flake.lock
 
 ## Network shares
 
-Open the homelab shares from Dolphin. KDE asks for credentials when needed and can remember them for the session/wallet; no SMB username or password is stored in this repository.
+Dolphin Places is seeded with `datapool` and `fastpool-config`. They open through KDE/KIO, so KDE asks for credentials when needed and can remember them in the session/wallet; no SMB username or password is stored in this repository.
 
 ```text
 smb://192.168.1.102/datapool
