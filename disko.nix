@@ -1,10 +1,12 @@
-# Disk layout: nvme0n1 (Samsung 990 PRO 2TB NVMe SSD) — 1G EFI boot + btrfs root
-# Subvolumes: @ (root)  @home  @nix (disk accounting + noatime isolation)  @snapshots (/home/.snapshots)
-# No swap — zRAM is used instead (see configuration.nix)
+# System disk: Samsung SSD 990 PRO with Heatsink 2TB
+# Serial: S7DRNJ0Y104863E
+# Stable by-id path prevents nvme0n1/nvme1n1 renumbering from targeting the wrong disk.
+# Subvolumes: @ (root)  @home  @nix  @snapshots (/home/.snapshots)
+# No swap partition — zRAM is used instead (see configuration.nix).
 { ... }: {
   disko.devices.disk.main = {
-    device = "/dev/nvme0n1";
-    type   = "disk";
+    device = "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_with_Heatsink_2TB_S7DRNJ0Y104863E";
+    type = "disk";
     content = {
       type = "gpt";
       partitions = {
@@ -12,34 +14,34 @@
           size = "1G";
           type = "EF00";
           content = {
-            type        = "filesystem";
-            format      = "vfat";
-            mountpoint  = "/boot";
+            type = "filesystem";
+            format = "vfat";
+            mountpoint = "/boot";
             mountOptions = [ "fmask=0077" "dmask=0077" ];
           };
         };
         root = {
           size = "100%";
           content = {
-            type      = "btrfs";
+            type = "btrfs";
             extraArgs = [ "-f" ];
             subvolumes = {
               "@" = {
-                mountpoint   = "/";
+                mountpoint = "/";
                 mountOptions = [ "compress=zstd" "noatime" ];
               };
               "@home" = {
-                mountpoint   = "/home";
+                mountpoint = "/home";
                 mountOptions = [ "compress=zstd" "noatime" ];
               };
               "@nix" = {
-                mountpoint   = "/nix";
+                mountpoint = "/nix";
                 mountOptions = [ "compress=zstd" "noatime" ];
               };
-              # Where snapper stores /home snapshots.
-              # Must be a separate subvol — otherwise snapshots nest inside each other.
+              # Snapper stores /home snapshots here. Keeping this separate
+              # prevents snapshots from recursively containing themselves.
               "@snapshots" = {
-                mountpoint   = "/home/.snapshots";
+                mountpoint = "/home/.snapshots";
                 mountOptions = [ "compress=zstd" "noatime" ];
               };
             };
