@@ -1,17 +1,18 @@
 { pkgs, lib, ... }:
 
 {
-  # Lightweight KDE customizations:
-  # Uses default tools built into KDE Plasma (lookandfeeltool & kwriteconfig6)
-  # instead of pulling heavy development dependencies (plasma-manager).
-
+  # Lightweight Plasma defaults without plasma-manager. kwriteconfig6 edits only
+  # the relevant KDE keys and does not require a running graphical session.
   home.activation.kdeCustomizations = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    # 1. Dark Mode: Apply Breeze Dark theme
-    $DRY_RUN_CMD ${pkgs.kdePackages.plasma-workspace}/bin/lookandfeeltool --apply org.kde.breezedark.desktop >/dev/null 2>&1 || true
+    # Breeze Dark from the first login.
+    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage org.kde.breezedark.desktop
+    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle Breeze
+    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kdeglobals --group General --key ColorScheme BreezeDark
+    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kdeglobals --group Icons --key Theme breeze-dark
 
-    # 2. Night Color: Enable in automatic mode
-    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kwinrc --group NightColor --key Active true || true
-    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kwinrc --group NightColor --key Mode Automatic || true
-    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kwinrc --group NightColor --key NightTemperature 4500 || true
+    # Night Light: automatic sunset-to-sunrise schedule from GeoClue.
+    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kwinrc --group NightColor --key Active true
+    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kwinrc --group NightColor --key Mode Automatic
+    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kwinrc --group NightColor --key NightTemperature 4500
   '';
 }
