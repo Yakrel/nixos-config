@@ -11,9 +11,10 @@
       la   = "eza -la --icons";
       tree = "eza --tree --icons";
       cat  = "bat";
-      # Update flake + rebuild + show what changed
-      nixupdate = "nix flake update $NIXOS_CONFIG && sudo nixos-rebuild switch --flake $NIXOS_CONFIG#nixos && nvd diff /run/booted-system /run/current-system";
-      # Rebuild only (without updating the flake)
+      # Update flake inputs + create a bootable generation + show changes.
+      # New kernel/graphics stack is activated after reboot, not inside current session.
+      nixupdate = "nix flake update $NIXOS_CONFIG && sudo nixos-rebuild boot --flake $NIXOS_CONFIG#nixos && nvd diff /run/booted-system /nix/var/nix/profiles/system";
+      # Rebuild only (without updating flake inputs).
       nixswitch = "sudo nixos-rebuild switch --flake $NIXOS_CONFIG#nixos && nvd diff /run/booted-system /run/current-system";
     };
   };
@@ -21,7 +22,7 @@
   programs.starship.enable = true;
 
   programs.zoxide = {
-    enable              = true;
+    enable = true;
     enableFishIntegration = true;
   };
 }
