@@ -1,8 +1,8 @@
 { pkgs, ... }:
 
 {
-  # Registers fish as a system shell (/etc/shells).
-  # User config (aliases, starship, zoxide) lives in home-manager.
+  # Registers Fish as a system shell (/etc/shells).
+  # User config (Pure prompt, aliases, zoxide) lives in Home Manager.
   programs.fish.enable = true;
 
   environment.systemPackages = with pkgs; [
