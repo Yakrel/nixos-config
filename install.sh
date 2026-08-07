@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # nixos.byetgin.com/install.sh
-# Run from a NixOS minimal unstable ISO:
-#   curl -fsSL https://nixos.byetgin.com/install.sh | sudo bash
+# Run from a NixOS 26.11pre minimal ISO:
+#   curl -fL https://nixos.byetgin.com/install.sh|sudo bash
 set -euo pipefail
 
 FLAKE_URI="github:Yakrel/nixos-config"
@@ -13,7 +13,7 @@ nix_cmd() {
   nix --extra-experimental-features "nix-command flakes" "$@"
 }
 
-echo "==> [1/5] Checking installer target..."
+echo "==> [1/6] Checking installer target..."
 if [[ ! -e "$INSTALL_DISK_BY_ID" ]]; then
   echo "ERROR: Expected Samsung 990 PRO was not found at:"
   echo "  $INSTALL_DISK_BY_ID"
@@ -41,12 +41,11 @@ echo "Serial:      $ACTUAL_SERIAL"
 echo "Size:        $ACTUAL_SIZE"
 echo
 
-echo "==> [2/5] Validating remote flake before touching the disk..."
+echo "==> [2/6] Validating remote flake before touching the disk..."
 if ! nix_cmd eval --raw "${FLAKE_URI}#nixosConfigurations.nixos.config.system.build.toplevel.drvPath" >/dev/null; then
   echo
   echo "ERROR: The NixOS flake could not be fetched/evaluated."
-  echo "No disk changes were made."
-  echo "If the GitHub repository is private, make it accessible to Nix or configure a GitHub access token first."
+  echo "No disk changes were made. Check network access and the flake configuration."
   exit 1
 fi
 
@@ -65,16 +64,20 @@ if [[ "$confirmation" != "ERASE" ]]; then
   exit 1
 fi
 
-echo "==> [3/5] Formatting the verified system disk with disko..."
+echo "==> [3/6] Formatting the verified system disk with disko..."
 nix_cmd run github:nix-community/disko -- \
   --mode destroy,format,mount \
   --flake "$FLAKE_CONFIG"
 
-echo "==> [4/5] Installing NixOS..."
+echo "==> [4/6] Installing NixOS..."
 nixos-install --no-root-passwd --flake "$FLAKE_CONFIG"
 
-echo "==> [5/5] Setting password for user byetgin..."
+echo "==> [5/6] Preparing the canonical config path..."
+rm -rf /mnt/etc/nixos
+ln -s /home/byetgin/Desktop/nixos-config /mnt/etc/nixos
+
+echo "==> [6/6] Setting password for user byetgin..."
 nixos-enter --root /mnt -c 'passwd byetgin'
 
 echo
-echo "Done. Reboot when ready."
+echo "Done. Reboot, log in, then clone the repo to ~/Desktop/nixos-config."
