@@ -4,17 +4,24 @@
 #   curl -fL https://nixos.byetgin.com/install.sh|sudo bash
 set -euo pipefail
 
-FLAKE_URI="github:Yakrel/nixos-config"
-FLAKE_CONFIG="${FLAKE_URI}#nixos"
+REPO_URL="https://github.com/Yakrel/nixos-config.git"
 CONFIG_DIR="/home/byetgin/Desktop/nixos-config"
 INSTALL_DISK_BY_ID="/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_with_Heatsink_2TB_S7DRNJ0Y104863E"
 EXPECTED_SERIAL="S7DRNJ0Y104863E"
+WORK_ROOT="$(mktemp -d)"
+WORK_DIR="$WORK_ROOT/nixos-config"
+LOCAL_FLAKE="path:$WORK_DIR"
+
+cleanup() {
+  rm -rf "$WORK_ROOT"
+}
+trap cleanup EXIT
 
 nix_cmd() {
   nix --extra-experimental-features "nix-command flakes" "$@"
 }
 
-echo "==> [1/9] Checking installer target..."
+echo "==> [1/7] Checking installer target..."
 if [[ ! -e "$INSTALL_DISK_BY_ID" ]]; then
   echo "ERROR: Expected Samsung 990 PRO was not found at:"
   echo "  $INSTALL_DISK_BY_ID"
@@ -42,14 +49,32 @@ echo "Serial:      $ACTUAL_SERIAL"
 echo "Size:        $ACTUAL_SIZE"
 echo
 
-echo "==> [2/9] Validating remote flake before touching the disk..."
-if ! nix_cmd eval --raw "${FLAKE_URI}#nixosConfigurations.nixos.config.system.build.toplevel.drvPath" >/dev/null; then
+echo "==> [2/7] Cloning and locking the install configuration..."
+git clone --quiet "$REPO_URL" "$WORK_DIR"
+echo "Config commit: $(git -C "$WORK_DIR" rev-parse --short HEAD)"
+
+if [[ -f "$WORK_DIR/flake.lock" ]]; then
+  echo "Using the repository flake.lock; only missing lock entries may be added."
+else
+  echo "No flake.lock is committed yet; creating the initial lock snapshot."
+fi
+nix_cmd flake lock "$LOCAL_FLAKE"
+
+echo "==> [3/7] Building the exact locked installer artifacts before touching the disk..."
+if ! nix_cmd eval --raw "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.system.build.toplevel.drvPath" >/dev/null; then
   echo
-  echo "ERROR: The NixOS flake could not be fetched/evaluated."
-  echo "No disk changes were made. Check network access and the flake configuration."
+  echo "ERROR: The locked NixOS configuration could not be evaluated."
+  echo "No disk changes were made."
   exit 1
 fi
 
+DISKO_SCRIPT="$(nix_cmd build --no-link --print-out-paths "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.system.build.diskoScript")"
+SYSTEM_PATH="$(nix_cmd build --no-link --print-out-paths "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.system.build.toplevel")"
+
+echo
+echo "Locked install artifacts are ready."
+echo "Disko:  $DISKO_SCRIPT"
+echo "System: $SYSTEM_PATH"
 echo
 printf '%s\n' \
   "WARNING: THE FOLLOWING DISK WILL BE COMPLETELY ERASED:" \
@@ -65,37 +90,29 @@ if [[ "$confirmation" != "ERASE" ]]; then
   exit 1
 fi
 
-echo "==> [3/9] Formatting the verified system disk with disko..."
-nix_cmd run github:nix-community/disko -- \
-  --mode destroy,format,mount \
-  --flake "$FLAKE_CONFIG"
+echo "==> [4/7] Formatting and mounting the verified system disk..."
+bash "$DISKO_SCRIPT"
 
-echo "==> [4/9] Installing the remote NixOS configuration..."
-nixos-install --no-root-passwd --flake "$FLAKE_CONFIG"
+echo "==> [5/7] Installing the prebuilt locked NixOS system..."
+nixos-install --no-root-passwd --system "$SYSTEM_PATH"
 
-echo "==> [5/9] Cloning the editable config repo with the installed system's Git..."
-nixos-enter --root /mnt -c 'install -d -m 0755 -o byetgin -g users /home/byetgin/Desktop'
-nixos-enter --root /mnt -c 'runuser -u byetgin -- git clone https://github.com/Yakrel/nixos-config.git /home/byetgin/Desktop/nixos-config'
+echo "==> [6/7] Installing the exact Git checkout used for this install..."
+install -d -m 0755 "/mnt/home/byetgin/Desktop"
+rm -rf "/mnt$CONFIG_DIR"
+cp -a "$WORK_DIR" "/mnt$CONFIG_DIR"
 
-echo "==> [6/9] Creating the initial flake.lock with the live ISO Nix..."
-nix_cmd flake lock "path:/mnt$CONFIG_DIR"
-if [[ -e "/mnt$CONFIG_DIR/flake.lock" ]]; then
-  chown 1000:100 "/mnt$CONFIG_DIR/flake.lock"
-fi
-
-echo "==> [7/9] Linking /etc/nixos to the user-owned Git checkout..."
 rm -rf /mnt/etc/nixos
 ln -s "$CONFIG_DIR" /mnt/etc/nixos
 
-echo "==> [8/9] Building the first boot generation from that exact lock..."
-# Use path: explicitly so the newly created, still-untracked flake.lock is included.
-nixos-enter --root /mnt -c 'nixos-rebuild boot --flake path:/home/byetgin/Desktop/nixos-config#nixos'
+# The checkout was cloned by root on the live ISO; make the real working copy user-owned.
+nixos-enter --root /mnt -c 'chown -R byetgin:users /home/byetgin/Desktop/nixos-config'
 
-echo "==> [9/9] Setting password for user byetgin..."
+echo "==> [7/7] Setting password for user byetgin..."
 nixos-enter --root /mnt -c 'passwd byetgin'
 
 echo
 echo "Done. Reboot when ready."
 echo "Config repo: $CONFIG_DIR (owned by byetgin)"
 echo "/etc/nixos -> $CONFIG_DIR"
-echo "After a successful boot, review git status and commit flake.lock if it is new/changed."
+echo "The installed checkout contains the exact flake.lock used for this installation."
+echo "After a successful boot, review git status and commit/push flake.lock if it is new or changed."
