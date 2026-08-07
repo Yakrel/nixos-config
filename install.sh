@@ -6,6 +6,8 @@ set -euo pipefail
 
 FLAKE_URI="github:Yakrel/nixos-config"
 FLAKE_CONFIG="${FLAKE_URI}#nixos"
+CONFIG_DIR="/home/byetgin/.config/nixos"
+DESKTOP_LINK="/home/byetgin/Desktop/nixos-config"
 INSTALL_DISK_BY_ID="/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_with_Heatsink_2TB_S7DRNJ0Y104863E"
 EXPECTED_SERIAL="S7DRNJ0Y104863E"
 
@@ -13,7 +15,7 @@ nix_cmd() {
   nix --extra-experimental-features "nix-command flakes" "$@"
 }
 
-echo "==> [1/6] Checking installer target..."
+echo "==> [1/9] Checking installer target..."
 if [[ ! -e "$INSTALL_DISK_BY_ID" ]]; then
   echo "ERROR: Expected Samsung 990 PRO was not found at:"
   echo "  $INSTALL_DISK_BY_ID"
@@ -41,7 +43,7 @@ echo "Serial:      $ACTUAL_SERIAL"
 echo "Size:        $ACTUAL_SIZE"
 echo
 
-echo "==> [2/6] Validating remote flake before touching the disk..."
+echo "==> [2/9] Validating remote flake before touching the disk..."
 if ! nix_cmd eval --raw "${FLAKE_URI}#nixosConfigurations.nixos.config.system.build.toplevel.drvPath" >/dev/null; then
   echo
   echo "ERROR: The NixOS flake could not be fetched/evaluated."
@@ -64,20 +66,35 @@ if [[ "$confirmation" != "ERASE" ]]; then
   exit 1
 fi
 
-echo "==> [3/6] Formatting the verified system disk with disko..."
+echo "==> [3/9] Formatting the verified system disk with disko..."
 nix_cmd run github:nix-community/disko -- \
   --mode destroy,format,mount \
   --flake "$FLAKE_CONFIG"
 
-echo "==> [4/6] Installing NixOS..."
+echo "==> [4/9] Installing the remote NixOS configuration..."
 nixos-install --no-root-passwd --flake "$FLAKE_CONFIG"
 
-echo "==> [5/6] Preparing the canonical config path..."
-rm -rf /mnt/etc/nixos
-ln -s /home/byetgin/Desktop/nixos-config /mnt/etc/nixos
+echo "==> [5/9] Cloning the canonical config repo with the installed system's Git..."
+nixos-enter --root /mnt -c 'install -d -m 0755 -o byetgin -g users /home/byetgin/.config /home/byetgin/Desktop'
+nixos-enter --root /mnt -c 'runuser -u byetgin -- git clone https://github.com/Yakrel/nixos-config.git /home/byetgin/.config/nixos'
 
-echo "==> [6/6] Setting password for user byetgin..."
+echo "==> [6/9] Advancing and staging the initial flake.lock..."
+nixos-enter --root /mnt -c 'runuser -u byetgin -- sh -c "cd /home/byetgin/.config/nixos && nix --extra-experimental-features \"nix-command flakes\" flake update && git add flake.lock"'
+
+echo "==> [7/9] Creating config shortcuts..."
+rm -rf /mnt/etc/nixos
+ln -s "$CONFIG_DIR" /mnt/etc/nixos
+ln -s "$CONFIG_DIR" "/mnt$DESKTOP_LINK"
+chown -h 1000:100 "/mnt$DESKTOP_LINK"
+
+echo "==> [8/9] Building the first boot generation from that exact lock..."
+nixos-enter --root /mnt -c 'nixos-rebuild boot --flake /home/byetgin/.config/nixos#nixos'
+
+echo "==> [9/9] Setting password for user byetgin..."
 nixos-enter --root /mnt -c 'passwd byetgin'
 
 echo
-echo "Done. Reboot, log in, then clone the repo to ~/Desktop/nixos-config."
+echo "Done. Reboot when ready."
+echo "Config repo: $CONFIG_DIR"
+echo "Shortcuts:   /etc/nixos and $DESKTOP_LINK"
+echo "flake.lock is already staged; after a successful boot, commit and push it."
