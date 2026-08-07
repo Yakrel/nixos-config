@@ -4,6 +4,7 @@
 - Use KDE/Dolphin KIO (`smb://...`) for the homelab shares by default; seed `datapool` and `fastpool-config` into Dolphin Places while preserving the user's mutable `user-places.xbel`; do not add system-level CIFS mounts or credential files unless the user explicitly asks for them
 - Keep README operational and concise: install, first-boot, update, rollback and essential commands; do not duplicate implementation details already clear from the Nix code
 - Never target an install disk by volatile names such as `/dev/nvme0n1`; use the verified stable by-id path
+- Keep the destructive install target single-source: `disko.devices.disk.main.device` in `disko.nix` is authoritative, and `install.sh` must evaluate that value rather than duplicating the device path. Keep the serial check independent so an accidental target change aborts safely.
 - Keep the system GPT partition labels explicit as `nixos-boot` and `nixos-root`; do not rely on Disko's generated `disk-main-*` defaults
 - Never run `nix flake update` implicitly as part of an unrelated config change; advancing input revisions must be an explicit rolling-update action
 
@@ -20,10 +21,11 @@
 - Prefer a clean Git working tree before `git pull`; local work may be committed without being pushed first, but do not discard or overwrite local changes automatically
 
 ## flake.lock policy
-- Fresh install uses Git from the live NixOS ISO to clone the public repository into a writable temporary directory before any destructive disk operation.
+- Fresh install uses the Git already available on the NixOS minimal live ISO to clone the public repository into a writable temporary directory before any destructive disk operation.
 - If the repository has no committed `flake.lock`, run `nix flake lock` there to create the initial snapshot.
 - If a committed `flake.lock` already exists, bootstrap may run `nix flake lock` only as a consistency check; if the file changes at all, abort before touching the disk. A reinstall must use the last committed known-good lock exactly, never silently advance or repair it.
 - Use an explicit `path:` flake reference for the temporary checkout so a newly created, still-untracked initial `flake.lock` is included by Nix.
+- Resolve the destructive install target from `nixosConfigurations.nixos.config.disko.devices.disk.main.device` in that exact locked checkout, require a stable `/dev/disk/by-id/...` path, and verify the independent expected serial before running Disko.
 - Evaluate and build both `config.system.build.diskoScript` and `config.system.build.toplevel` from that exact locked checkout before modifying the disk. Configuration/fetch/build failures must happen first.
 - The installer intentionally has no extra `ERASE` confirmation once the exact Samsung by-id + serial has been verified and the locked artifacts have built successfully.
 - Run the built `system.build.diskoScript` instead of fetching a separate latest Disko CLI, so disk formatting uses the same locked Disko module revision as the NixOS configuration.
