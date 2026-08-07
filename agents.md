@@ -18,14 +18,17 @@
 
 ## flake.lock policy
 - Fresh install uses Git from the live NixOS ISO to clone the public repository into a writable temporary directory before any destructive disk operation.
-- Run `nix flake lock` on that temporary checkout. If no lock exists, it creates the initial snapshot; if a committed lock already exists, existing locked revisions must not be advanced and only missing entries may be added.
-- Use an explicit `path:` flake reference for the temporary checkout so a newly created, still-untracked `flake.lock` is included by Nix.
-- Before asking for `ERASE`, evaluate and build both `config.system.build.diskoScript` and `config.system.build.toplevel` from that exact locked checkout. Configuration/fetch/build failures must happen before the disk is modified.
+- If the repository has no committed `flake.lock`, run `nix flake lock` there to create the initial snapshot.
+- If a committed `flake.lock` already exists, bootstrap may run `nix flake lock` only as a consistency check; if the file changes at all, abort before touching the disk. A reinstall must use the last committed known-good lock exactly, never silently advance or repair it.
+- Use an explicit `path:` flake reference for the temporary checkout so a newly created, still-untracked initial `flake.lock` is included by Nix.
+- Evaluate and build both `config.system.build.diskoScript` and `config.system.build.toplevel` from that exact locked checkout before modifying the disk. Configuration/fetch/build failures must happen first.
+- The installer intentionally has no extra `ERASE` confirmation once the exact Samsung by-id + serial has been verified and the locked artifacts have built successfully.
 - Run the built `system.build.diskoScript` instead of fetching a separate latest Disko CLI, so disk formatting uses the same locked Disko module revision as the NixOS configuration.
 - Install the already-built system closure with `nixos-install --system`; do not re-resolve the flake after the disk has been erased.
 - After installation, copy that exact temporary Git checkout, including `.git` and its `flake.lock`, to `/home/byetgin/Desktop/nixos-config`, then make it owned by `byetgin:users`. Do not clone or lock a second time.
+- When `install.sh` is piped from curl, attach the final `passwd byetgin` call to `/dev/tty` so the password prompt reads the real keyboard.
 - The installer must not automatically stage, commit or push `flake.lock`; the user saves the checkpoint only after verifying a successful boot.
-- After the first successful boot, commit and push the initial `flake.lock` as the first known-good checkpoint.
+- After the first successful boot, commit and push the initial `flake.lock` as the first known-good checkpoint, then take a manual `/home` Snapper baseline.
 - After every intentional `nixupdate`, reboot into the new generation and verify the system before committing the changed `flake.lock`.
 - If the new generation is good, commit the lock update. Preferred commit message: `chore: update flake inputs (YYYY-MM-DD)`.
 - Do not invent a manual sequential revision number. Git commit hashes already provide immutable revision identity; the date in the commit message is only for readability.
