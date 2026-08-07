@@ -18,6 +18,9 @@
 
 ## flake.lock policy
 - Fresh install may run `nix flake lock` only to ensure a lock exists. If no lock exists yet, this resolves the current inputs and creates the initial snapshot; if a committed lock already exists, do not advance its existing revisions during bootstrap.
+- During fresh install, create the target checkout's lock with the live ISO's working Nix, not a normal-user Nix invocation inside `nixos-enter`; the target nix-daemon is not running yet.
+- Until a newly created `flake.lock` is tracked by Git, an ordinary raw Git flake path may ignore it. The installer's first locked build must therefore use an explicit `path:/home/byetgin/Desktop/nixos-config#nixos` reference (or otherwise ensure the lock is indexed) so the new lock is actually included.
+- The installer must not automatically stage, commit or push `flake.lock`; the user saves the checkpoint only after verifying a successful boot.
 - After the first successful boot, commit and push the initial `flake.lock` as the first known-good checkpoint.
 - After every intentional `nixupdate`, reboot into the new generation and verify the system before committing the changed `flake.lock`.
 - If the new generation is good, commit the lock update. Preferred commit message: `chore: update flake inputs (YYYY-MM-DD)`.
