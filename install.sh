@@ -77,5 +77,4 @@ echo "==> [5/5] Setting password for user byetgin..."
 nixos-enter --root /mnt -c 'passwd byetgin'
 
 echo
-echo=""
 echo "Done. Reboot when ready."
