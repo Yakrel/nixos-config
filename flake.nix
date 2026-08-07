@@ -26,15 +26,13 @@
   in {
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
-      specialArgs = { inherit nixosVersion; };
+      specialArgs = {
+        inherit nixosVersion;
+        jelliumDesktop = nix-gaming-edge.packages.x86_64-linux.jellium-desktop;
+      };
       modules = [
-        # External package overlays — flake inputs keep them pinned with the system lock.
-        {
-          nixpkgs.overlays = [
-            nur.overlays.default
-            nix-gaming-edge.overlays.jellium-desktop
-          ];
-        }
+        # NUR overlay — as a flake input instead of builtins.fetchTarball
+        { nixpkgs.overlays = [ nur.overlays.default ]; }
         disko.nixosModules.disko
         ./disko.nix
         ./configuration.nix
