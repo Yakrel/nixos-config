@@ -21,12 +21,15 @@
       tree = "eza --tree --icons";
       cat = "bat";
 
-      # Update rolling flake inputs, build the next boot generation, then show diff.
+      # Pull only declarative config/history from GitHub. Never changes inputs by itself.
+      nixpull = "git -C $NIXOS_CONFIG pull --ff-only";
+
+      # Apply the config exactly as currently locked. Does not advance flake.lock.
+      nixapply = "sudo nixos-rebuild switch --flake $NIXOS_CONFIG#nixos && nvd diff /run/booted-system /run/current-system";
+
+      # Explicit rolling upgrade: advance flake.lock and prepare the new system for next boot.
       # Kernel/Mesa/Plasma changes activate after reboot instead of mid-session.
       nixupdate = "nix flake update --flake $NIXOS_CONFIG && sudo nixos-rebuild boot --flake $NIXOS_CONFIG#nixos && nvd diff /run/booted-system /nix/var/nix/profiles/system";
-
-      # Rebuild the current locked config immediately without advancing inputs.
-      nixswitch = "sudo nixos-rebuild switch --flake $NIXOS_CONFIG#nixos && nvd diff /run/booted-system /run/current-system";
     };
   };
 
