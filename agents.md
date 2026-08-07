@@ -1,9 +1,10 @@
 ## Rules
 - Never `git commit` or `git push` without explicit user approval
-- Never put credentials or secrets in the repository
-- SMB authentication uses `/etc/samba/homelab.credentials` with username `Yakrel`; keep that file root-only and outside Git
+- Never put credentials, SMB usernames, passwords or other secrets in the repository
+- SMB authentication uses the root-only local file `/etc/samba/homelab.credentials`; fresh install prompts for both username and password and writes them outside Git
 - Keep README operational and concise: install, first-boot, update, rollback and essential commands; do not duplicate implementation details already clear from the Nix code
 - Never target an install disk by volatile names such as `/dev/nvme0n1`; use the verified stable by-id path
+- Keep the system GPT partition labels explicit as `nixos-boot` and `nixos-root`; do not rely on Disko's generated `disk-main-*` defaults
 - Never run `nix flake update` implicitly as part of an unrelated config change; advancing input revisions must be an explicit rolling-update action
 
 ## Goal
@@ -28,7 +29,7 @@
 - Run the built `system.build.diskoScript` instead of fetching a separate latest Disko CLI, so disk formatting uses the same locked Disko module revision as the NixOS configuration.
 - Install the already-built system closure with `nixos-install --system`; do not re-resolve the flake after the disk has been erased.
 - After installation, copy that exact temporary Git checkout, including `.git` and its `flake.lock`, to `/home/byetgin/Desktop/nixos-config`, then make it owned by `byetgin:users`. Do not clone or lock a second time.
-- When `install.sh` is piped from curl, attach the final `passwd byetgin` call to `/dev/tty` so the password prompt reads the real keyboard.
+- When `install.sh` is piped from curl, attach interactive password/SMB prompts to `/dev/tty` so they read the real keyboard rather than the pipe.
 - The installer must not automatically stage, commit or push `flake.lock`; the user saves the checkpoint only after verifying a successful boot.
 - After the first successful boot, commit and push the initial `flake.lock` as the first known-good checkpoint, then take a manual `/home` Snapper baseline.
 - After every intentional `nixupdate`, reboot into the new generation and verify the system before committing the changed `flake.lock`.
