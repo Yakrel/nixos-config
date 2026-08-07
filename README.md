@@ -90,21 +90,38 @@ Use a 26.11pre NixOS minimal unstable ISO. `system.stateVersion` / `home.stateVe
 curl -fL https://nixos.byetgin.com/install.sh|sudo bash
 ```
 
-The repository is public, so the live ISO does not need Git, a GitHub login, or a token. Nix fetches and evaluates the remote flake directly before any destructive step.
+The live ISO already includes Git and Nix. The installer uses one temporary, writable Git checkout as the single source of truth for the whole installation.
 
-The installer then:
+Before touching the disk, the installer:
 
 1. verifies the exact Samsung 990 PRO by stable `/dev/disk/by-id` + serial,
-2. requires typing `ERASE` through `/dev/tty`,
-3. formats only the verified 2TB system disk,
-4. installs NixOS,
-5. uses Git from the installed target system to clone this repo directly to `~/Desktop/nixos-config`,
-6. runs `nix flake lock` to create missing lock entries without deliberately advancing an existing lock,
-7. links `/etc/nixos` to the Desktop Git checkout,
-8. builds the first boot generation from that lock,
-9. asks for the `byetgin` password.
+2. clones this public repository to a temporary directory on the live ISO,
+3. runs `nix flake lock` there — creating an initial lock only when needed and never intentionally advancing existing locked revisions,
+4. evaluates the locked NixOS configuration,
+5. builds/downloads both the locked Disko script and the complete locked NixOS system closure.
 
-The installer does **not** automatically commit or push `flake.lock`. After the first successful boot, review `git status` and commit the lock yourself if it is new or changed.
+Only after all of those steps succeed does it show the destructive `ERASE` prompt. After confirmation it:
+
+1. runs the already-built `config.system.build.diskoScript`,
+2. installs the already-built system closure with `nixos-install --system`, so the flake is not re-resolved after the disk is erased,
+3. copies the exact Git checkout used for installation — including `.git` and its `flake.lock` — to `~/Desktop/nixos-config`,
+4. changes that checkout to `byetgin:users`,
+5. links `/etc/nixos` to the Desktop checkout,
+6. asks for the `byetgin` password.
+
+The existing 1TB NVMe and 480GB SATA data disks are never Disko targets.
+
+The installer does **not** automatically stage, commit or push `flake.lock`. If the first installation had to create or change the lock, the installed checkout contains that exact file. After the first successful boot, review and save the known-good checkpoint:
+
+```bash
+cd ~/Desktop/nixos-config
+git status
+git add flake.lock
+git commit -m "chore: update flake inputs (YYYY-MM-DD)"
+git push
+```
+
+On future reinstalls, a committed `flake.lock` is cloned from the repository first. `nix flake lock` keeps existing locked revisions and only adds missing entries; normal version advancement remains an explicit `nixupdate` action.
 
 ## Config layout and permissions
 
@@ -114,7 +131,7 @@ There is one real editable Git checkout:
 /home/byetgin/Desktop/nixos-config
 ```
 
-It is cloned as user `byetgin`, so the repository files and `.git` directory are user-owned and normal editing/Git operations do not require sudo.
+It is made user-owned (`byetgin:users`), so the repository files and `.git` directory support normal editing/Git operations without sudo.
 
 The installer creates:
 
@@ -126,7 +143,7 @@ The installer creates:
 
 ## flake.lock in one paragraph
 
-`flake.nix` says which rolling inputs to follow, such as `nixos-unstable`. `flake.lock` records the exact revisions currently selected. `nix flake lock` is used during first-install bootstrap to make sure a lock exists. `nixupdate` deliberately runs `nix flake update`, which is the action that advances those revisions. `nixapply` never advances them.
+`flake.nix` says which rolling inputs to follow, such as `nixos-unstable`. `flake.lock` records the exact revisions currently selected. Fresh install runs `nix flake lock` on a writable temporary Git checkout so a missing initial lock can be created before any disk operation; existing locked revisions are preserved. That exact checkout and lock are used to build Disko and NixOS and are then copied to the installed system. `nixapply` uses the current lock without advancing it. `nixupdate` deliberately runs `nix flake update`, which is the action that advances those revisions.
 
 ## Storage
 
