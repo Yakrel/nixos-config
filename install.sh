@@ -6,7 +6,6 @@ set -euo pipefail
 
 REPO_URL="https://github.com/Yakrel/nixos-config.git"
 CONFIG_DIR="/home/byetgin/Desktop/nixos-config"
-INSTALL_DISK_BY_ID="/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_with_Heatsink_2TB_S7DRNJ0Y104863E"
 EXPECTED_SERIAL="S7DRNJ0Y104863E"
 WORK_ROOT="$(mktemp -d)"
 WORK_DIR="$WORK_ROOT/nixos-config"
@@ -21,9 +20,40 @@ nix_cmd() {
   nix --extra-experimental-features "nix-command flakes" "$@"
 }
 
-echo "==> [1/7] Checking installer target..."
+echo "==> [1/7] Cloning and locking the install configuration..."
+git clone --quiet "$REPO_URL" "$WORK_DIR"
+echo "Config commit: $(git -C "$WORK_DIR" rev-parse --short HEAD)"
+
+LOCK_WAS_COMMITTED=false
+if git -C "$WORK_DIR" ls-files --error-unmatch flake.lock >/dev/null 2>&1; then
+  LOCK_WAS_COMMITTED=true
+  echo "Using the committed flake.lock exactly."
+else
+  echo "No flake.lock is committed yet; creating the initial lock snapshot."
+fi
+
+nix_cmd flake lock "$LOCAL_FLAKE"
+
+if [[ "$LOCK_WAS_COMMITTED" == true ]] && ! git -C "$WORK_DIR" diff --quiet -- flake.lock; then
+  echo
+  echo "ERROR: The committed flake.lock would change during fresh-install bootstrap."
+  echo "Refusing to install an unverified input set. Update and commit flake.lock from a running system first."
+  exit 1
+fi
+
+echo "==> [2/7] Resolving and checking installer target..."
+# Disko is the single source of truth for the destructive target. Keep the
+# serial check independent so a mistaken target change fails closed.
+INSTALL_DISK_BY_ID="$(nix_cmd eval --raw "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.disko.devices.disk.main.device")"
+
+if [[ "$INSTALL_DISK_BY_ID" != /dev/disk/by-id/* ]]; then
+  echo "ERROR: Disko install target must use a stable /dev/disk/by-id path."
+  echo "Configured target: $INSTALL_DISK_BY_ID"
+  exit 1
+fi
+
 if [[ ! -e "$INSTALL_DISK_BY_ID" ]]; then
-  echo "ERROR: Expected Samsung 990 PRO was not found at:"
+  echo "ERROR: Configured install disk was not found at:"
   echo "  $INSTALL_DISK_BY_ID"
   echo
   echo "Detected disks:"
@@ -48,27 +78,6 @@ echo "Model:       $ACTUAL_MODEL"
 echo "Serial:      $ACTUAL_SERIAL"
 echo "Size:        $ACTUAL_SIZE"
 echo
-
-echo "==> [2/7] Cloning and locking the install configuration..."
-git clone --quiet "$REPO_URL" "$WORK_DIR"
-echo "Config commit: $(git -C "$WORK_DIR" rev-parse --short HEAD)"
-
-LOCK_WAS_COMMITTED=false
-if git -C "$WORK_DIR" ls-files --error-unmatch flake.lock >/dev/null 2>&1; then
-  LOCK_WAS_COMMITTED=true
-  echo "Using the committed flake.lock exactly."
-else
-  echo "No flake.lock is committed yet; creating the initial lock snapshot."
-fi
-
-nix_cmd flake lock "$LOCAL_FLAKE"
-
-if [[ "$LOCK_WAS_COMMITTED" == true ]] && ! git -C "$WORK_DIR" diff --quiet -- flake.lock; then
-  echo
-  echo "ERROR: The committed flake.lock would change during fresh-install bootstrap."
-  echo "Refusing to install an unverified input set. Update and commit flake.lock from a running system first."
-  exit 1
-fi
 
 echo "==> [3/7] Building the exact locked installer artifacts before touching the disk..."
 if ! nix_cmd eval --raw "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.system.build.toplevel.drvPath" >/dev/null; then
