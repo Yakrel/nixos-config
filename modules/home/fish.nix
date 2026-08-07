@@ -1,6 +1,6 @@
 { pkgs, ... }: {
-  # Canonical Git checkout. /etc/nixos and ~/Desktop/nixos-config point here.
-  home.sessionVariables.NIXOS_CONFIG = "/home/byetgin/.config/nixos";
+  # The real Git checkout lives on the Desktop; /etc/nixos is a symlink to it.
+  home.sessionVariables.NIXOS_CONFIG = "/home/byetgin/Desktop/nixos-config";
 
   programs.fish = {
     enable = true;
