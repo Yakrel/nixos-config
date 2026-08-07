@@ -12,9 +12,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nur.url = "github:nix-community/NUR";
+    nix-gaming-edge = {
+      url = "github:powerofthe69/nix-gaming-edge";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, home-manager, disko, nur, ... }:
+  outputs = { nixpkgs, home-manager, disko, nur, nix-gaming-edge, ... }:
   let
     # Fresh install only — update this when reinstalling from a new ISO.
     # Never change on a running system (breaks stateful service compatibility).
@@ -24,8 +28,13 @@
       system = "x86_64-linux";
       specialArgs = { inherit nixosVersion; };
       modules = [
-        # NUR overlay — as a flake input instead of builtins.fetchTarball
-        { nixpkgs.overlays = [ nur.overlays.default ]; }
+        # External package overlays — flake inputs keep them pinned with the system lock.
+        {
+          nixpkgs.overlays = [
+            nur.overlays.default
+            nix-gaming-edge.overlays.jellium-desktop
+          ];
+        }
         disko.nixosModules.disko
         ./disko.nix
         ./configuration.nix
