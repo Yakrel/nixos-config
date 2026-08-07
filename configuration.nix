@@ -35,14 +35,11 @@
   services.xserver.xkb.layout = "tr";
   console.keyMap = "trq";
 
-  # Use Omarchy's JetBrains Mono Nerd Font only for monospace applications.
   fonts = {
     packages = [ pkgs.nerd-fonts.jetbrains-mono ];
     fontconfig.defaultFonts.monospace = [ "JetBrainsMono Nerd Font" ];
   };
 
-
-  # Keep a small timeline of /home snapshots for recovering user files.
   services.snapper = {
     snapshotInterval = "hourly";
     cleanupInterval = "1d";
@@ -64,7 +61,6 @@
 
   services.printing.enable = true;
 
-  # KDE Plasma
   services.xserver.enable = true;
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
@@ -76,7 +72,6 @@
   ];
   services.xserver.excludePackages = [ pkgs.xterm ];
 
-  # Audio
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
@@ -85,24 +80,20 @@
     pulse.enable = true;
   };
 
-  # Nix
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
   };
 
-  # Keep two weeks of rollback history, then collect unreachable store paths.
+  # Keep rollback generations longer. Disk space is cheap on a 2TB NVMe.
   nix.gc = {
     automatic = true;
     dates = "daily";
-    options = "--delete-older-than 14d";
+    options = "--delete-older-than 30d";
   };
 
-  # zRAM: compressed swap in RAM — no partition needed. CachyOS/Omarchy default.
   zramSwap.enable = true;
 
-
-  # User
   users.users.byetgin = {
     isNormalUser = true;
     description = "Berkay Yetgin";
@@ -110,10 +101,8 @@
     shell = pkgs.fish;
   };
 
-  # Packages
   nixpkgs.config.allowUnfree = true;
 
-  # System packages
   environment.systemPackages = with pkgs; [
     nur.repos.jeffguorg.oh-my-pi-bin
     gh
@@ -124,6 +113,5 @@
     thunderbird
   ];
 
-  # Set in flake.nix — change only on fresh installs, never on a running system.
   system.stateVersion = nixosVersion;
 }
