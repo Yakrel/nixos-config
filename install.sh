@@ -21,7 +21,7 @@ nix_cmd() {
   nix --extra-experimental-features "nix-command flakes" "$@"
 }
 
-echo "==> [1/8] Checking installer target..."
+echo "==> [1/7] Checking installer target..."
 if [[ ! -e "$INSTALL_DISK_BY_ID" ]]; then
   echo "ERROR: Expected Samsung 990 PRO was not found at:"
   echo "  $INSTALL_DISK_BY_ID"
@@ -49,7 +49,7 @@ echo "Serial:      $ACTUAL_SERIAL"
 echo "Size:        $ACTUAL_SIZE"
 echo
 
-echo "==> [2/8] Cloning and locking the install configuration..."
+echo "==> [2/7] Cloning and locking the install configuration..."
 git clone --quiet "$REPO_URL" "$WORK_DIR"
 echo "Config commit: $(git -C "$WORK_DIR" rev-parse --short HEAD)"
 
@@ -70,7 +70,7 @@ if [[ "$LOCK_WAS_COMMITTED" == true ]] && ! git -C "$WORK_DIR" diff --quiet -- f
   exit 1
 fi
 
-echo "==> [3/8] Building the exact locked installer artifacts before touching the disk..."
+echo "==> [3/7] Building the exact locked installer artifacts before touching the disk..."
 if ! nix_cmd eval --raw "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.system.build.toplevel.drvPath" >/dev/null; then
   echo
   echo "ERROR: The locked NixOS configuration could not be evaluated."
@@ -89,13 +89,13 @@ echo
 echo "Verified target: $INSTALL_DISK ($ACTUAL_MODEL, serial $ACTUAL_SERIAL)"
 echo "Beginning automatic erase/install; no additional disk confirmation is requested."
 
-echo "==> [4/8] Formatting and mounting the verified system disk..."
+echo "==> [4/7] Formatting and mounting the verified system disk..."
 bash "$DISKO_SCRIPT"
 
-echo "==> [5/8] Installing the prebuilt locked NixOS system..."
+echo "==> [5/7] Installing the prebuilt locked NixOS system..."
 nixos-install --no-root-passwd --system "$SYSTEM_PATH"
 
-echo "==> [6/8] Installing the exact Git checkout used for this install..."
+echo "==> [6/7] Installing the exact Git checkout used for this install..."
 install -d -m 0755 "/mnt/home/byetgin/Desktop"
 rm -rf "/mnt$CONFIG_DIR"
 cp -a "$WORK_DIR" "/mnt$CONFIG_DIR"
@@ -106,25 +106,10 @@ ln -s "$CONFIG_DIR" /mnt/etc/nixos
 # The checkout was cloned by root on the live ISO; make the real working copy user-owned.
 nixos-enter --root /mnt -c 'chown -R byetgin:users /home/byetgin/Desktop/nixos-config'
 
-echo "==> [7/8] Setting password for user byetgin..."
+echo "==> [7/7] Setting password for user byetgin..."
 # install.sh is normally executed via `curl | sudo bash`, so stdin is the pipe.
 # Explicitly attach passwd to the controlling terminal so it reads the keyboard.
 nixos-enter --root /mnt -c 'passwd byetgin' </dev/tty
-
-echo "==> [8/8] Setting local SMB credentials..."
-SMB_USER=""
-SMB_PASS=""
-while [[ -z "$SMB_USER" ]]; do
-  read -r -p "SMB username: " SMB_USER </dev/tty
-done
-while [[ -z "$SMB_PASS" ]]; do
-  read -r -s -p "SMB password: " SMB_PASS </dev/tty
-  echo
-done
-install -d -m 0700 /mnt/etc/samba
-printf 'username=%s\npassword=%s\n' "$SMB_USER" "$SMB_PASS" > /mnt/etc/samba/homelab.credentials
-chmod 0600 /mnt/etc/samba/homelab.credentials
-unset SMB_USER SMB_PASS
 
 echo
 echo "Done. Reboot when ready."

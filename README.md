@@ -12,7 +12,7 @@ Boot a NixOS 26.11pre minimal ISO with internet access and run:
 curl -fL https://nixos.byetgin.com/install.sh|sudo bash
 ```
 
-The installer verifies the exact Samsung 990 PRO by stable by-id + serial, builds the locked system first, then automatically formats only that system disk. It asks for the `byetgin` password and local SMB username/password at the end. SMB credentials are written root-only under `/etc/samba`; they are never stored in Git.
+The installer verifies the exact Samsung 990 PRO by stable by-id + serial, builds the locked system first, then automatically formats only that system disk. The 1TB NVMe and 480GB SATA data disks are not installer targets. The `byetgin` password is requested at the end.
 
 If the repository already contains a committed `flake.lock`, reinstall uses that exact known-good lock. If no lock exists yet, the first install creates one.
 
@@ -33,8 +33,8 @@ git push
 Save a clean `/home` baseline:
 
 ```bash
-sudo snapper -c home create --description "Fresh NixOS baseline"
-sudo snapper -c home list
+snapper -c home create --description "Fresh NixOS baseline"
+snapper -c home list
 ```
 
 ## Normal use
@@ -47,7 +47,7 @@ git pull
 nixapply
 ```
 
-Local config changed (package/KDE/service/mount/etc.):
+Local config changed (package/KDE/service/etc.):
 
 ```bash
 nixapply
@@ -78,29 +78,19 @@ If an update is bad, boot the previous NixOS generation from systemd-boot, then 
 git -C ~/Desktop/nixos-config restore flake.lock
 ```
 
-## Change SMB credentials
+## Network shares
 
-```fish
-sudo install -d -m 700 /etc/samba
-read -P "SMB username: " SMB_USER
-read -s -P "SMB password: " SMB_PASS
-echo
-printf 'username=%s\npassword=%s\n' "$SMB_USER" "$SMB_PASS" | sudo tee /etc/samba/homelab.credentials >/dev/null
-set -e SMB_USER SMB_PASS
-sudo chmod 600 /etc/samba/homelab.credentials
-```
-
-Shares:
+Open the homelab shares from Dolphin. KDE asks for credentials when needed and can remember them for the session/wallet; no SMB username or password is stored in this repository.
 
 ```text
-/data/datapool        -> //192.168.1.102/datapool
-/data/fastpool-config -> //192.168.1.102/fastpool-config
+smb://192.168.1.102/datapool
+smb://192.168.1.102/fastpool-config
 ```
 
 ## Useful checks
 
 ```bash
-sudo snapper -c home list
+snapper -c home list
 systemctl --failed
 lspci -nnk
 nixos-version

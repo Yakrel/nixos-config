@@ -1,9 +1,6 @@
-{ pkgs, ... }:
+{ ... }:
 
 {
-  # Required for mounting SMB/CIFS shares.
-  environment.systemPackages = [ pkgs.cifs-utils ];
-
   # Existing data disks. These are mounted by filesystem UUID and are never
   # formatted by disko, so device-name changes (sda/nvme1n1) are harmless.
   fileSystems."/data/NVMe_1TB" = {
@@ -29,47 +26,6 @@
       "x-systemd.device-timeout=5s"
       "x-gvfs-show"
       "x-gvfs-name=SATA_480G"
-    ];
-  };
-
-  # Homelab SMB shares. Authentication lives in a local root-only credentials
-  # file, never in Git. Automount prevents boot delays when the server/network
-  # is unavailable.
-  fileSystems."/data/datapool" = {
-    device = "//192.168.1.102/datapool";
-    fsType = "cifs";
-    options = [
-      "credentials=/etc/samba/homelab.credentials"
-      "uid=1000"
-      "gid=100"
-      "nofail"
-      "_netdev"
-      "noauto"
-      "x-systemd.automount"
-      "x-systemd.idle-timeout=600"
-      "x-systemd.device-timeout=5s"
-      "x-systemd.mount-timeout=5s"
-      "x-gvfs-show"
-      "x-gvfs-name=datapool"
-    ];
-  };
-
-  fileSystems."/data/fastpool-config" = {
-    device = "//192.168.1.102/fastpool-config";
-    fsType = "cifs";
-    options = [
-      "credentials=/etc/samba/homelab.credentials"
-      "uid=1000"
-      "gid=100"
-      "nofail"
-      "_netdev"
-      "noauto"
-      "x-systemd.automount"
-      "x-systemd.idle-timeout=600"
-      "x-systemd.device-timeout=5s"
-      "x-systemd.mount-timeout=5s"
-      "x-gvfs-show"
-      "x-gvfs-name=fastpool-config"
     ];
   };
 }
