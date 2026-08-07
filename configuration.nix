@@ -65,12 +65,20 @@
   services.xserver.enable = true;
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
+
+  # Thunderbird replaces KDE PIM; avoid pulling Akonadi/KDEPIM runtime.
+  programs.kde-pim.enable = false;
+
+  # Keep one application per job where practical.
   environment.plasma6.excludePackages = with pkgs.kdePackages; [
-    konsole
-    elisa
+    konsole   # Kitty
+    kate      # VS Code
+    elisa     # Jellyfin Desktop / browser
+    okular    # Brave has a built-in PDF viewer
+    discover  # Packages are managed declaratively with Nix
     khelpcenter
-    kate
   ];
+
   # xterm is part of the default X server package set, not the Plasma package set.
   services.xserver.excludePackages = [ pkgs.xterm ];
 
