@@ -11,6 +11,7 @@
       type = "gpt";
       partitions = {
         boot = {
+          label = "nixos-boot";
           size = "1G";
           type = "EF00";
           content = {
@@ -21,6 +22,7 @@
           };
         };
         root = {
+          label = "nixos-root";
           size = "100%";
           content = {
             type = "btrfs";
