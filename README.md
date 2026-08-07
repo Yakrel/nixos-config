@@ -3,14 +3,64 @@
 Rolling-release NixOS with an Arch/yay-style update workflow, while keeping NixOS generations and declarative configuration for rollback.  
 i5-13400F · 32 GB RAM · AMD RX 9060 XT · Samsung 990 PRO 2TB · NixOS Unstable · KDE Plasma 6
 
-## Commands
+## Everyday commands
+
+There are three intentionally separate commands:
 
 ```bash
-nixupdate   # update flake inputs + create next boot generation + show diff
-nixswitch   # rebuild current locked config immediately
+nixpull    # pull only this Git config repo
+nixapply   # apply the current config exactly as locked
+nixupdate  # advance flake.lock to current rolling inputs + build next boot generation
 ```
 
-`nixupdate` intentionally uses `nixos-rebuild boot`, not `switch`. Kernel, Mesa and desktop updates become active after reboot, so the currently running desktop is not replaced underneath the session.
+The mental model is:
+
+```text
+nixpull
+  GitHub config changes -> local repo
+  flake.lock is not advanced by Nix
+
+nixapply
+  current files + current flake.lock -> running system
+  no package/input advancement
+
+nixupdate
+  nixpkgs/Home Manager/Disko/NUR -> newer revisions
+  flake.lock changes
+  new NixOS generation is prepared with `nixos-rebuild boot`
+  reboot to activate it
+```
+
+Typical config-only workflow:
+
+```bash
+nixpull
+nixapply
+```
+
+Typical rolling-upgrade workflow:
+
+```bash
+nixpull       # optional: first get config changes from GitHub
+nixupdate
+reboot
+```
+
+After a successful reboot, check and save the known-good lock:
+
+```bash
+cd ~/Desktop/nixos-config
+git status
+git add flake.lock
+git commit -m "update flake lock"
+git push
+```
+
+If the new generation is bad, boot the previous NixOS generation from systemd-boot, then restore the uncommitted lock before trying again:
+
+```bash
+git -C ~/Desktop/nixos-config restore flake.lock
+```
 
 ## Fresh Install
 
@@ -29,26 +79,14 @@ The installer then:
 3. formats only the verified 2TB system disk,
 4. installs NixOS,
 5. uses Git from the installed target system to clone this repo directly to `~/Desktop/nixos-config`,
-6. runs `nix flake lock` to create any missing lock entries without advancing an existing lock,
-7. stages `flake.lock` if it was newly created/changed,
-8. links `/etc/nixos` to the Desktop Git checkout and builds the first boot generation from that lock,
+6. runs `nix flake lock` to create missing lock entries without deliberately advancing an existing lock,
+7. links `/etc/nixos` to the Desktop Git checkout,
+8. builds the first boot generation from that lock,
 9. asks for the `byetgin` password.
 
-The existing 1TB NVMe and 480GB SATA Btrfs disks are never disko targets. They are mounted after boot at:
+The installer does **not** automatically commit or push `flake.lock`. After the first successful boot, review `git status` and commit the lock yourself if it is new or changed.
 
-```text
-/data/NVMe_1TB
-/data/SATA_480G
-```
-
-Homelab SMB shares are lazy-mounted so an unavailable server cannot hold up boot:
-
-```text
-/data/datapool        -> //192.168.1.102/datapool
-/data/fastpool-config -> //192.168.1.102/fastpool-config
-```
-
-## Config layout
+## Config layout and permissions
 
 There is one real editable Git checkout:
 
@@ -56,59 +94,44 @@ There is one real editable Git checkout:
 /home/byetgin/Desktop/nixos-config
 ```
 
-The installer creates one symlink:
+It is cloned as user `byetgin`, so the repository files and `.git` directory are user-owned and normal editing/Git operations do not require sudo.
+
+The installer creates:
 
 ```text
 /etc/nixos -> /home/byetgin/Desktop/nixos-config
 ```
 
-So editing through `/etc/nixos` or `~/Desktop/nixos-config` changes the exact same files. There is no second configuration copy to keep in sync and no extra canonical directory hidden under `~/.config`.
+`/etc/nixos` itself is only a root-created symbolic link. Following that link reaches the same user-owned files, so editing or running `git pull` from `/etc/nixos` does not create a second copy and should not require sudo.
 
-Normal config work:
+## flake.lock in one paragraph
 
-```bash
-cd ~/Desktop/nixos-config
-git pull
-nixswitch
-```
+`flake.nix` says which rolling inputs to follow, such as `nixos-unstable`. `flake.lock` records the exact revisions currently selected. `nix flake lock` is used during first-install bootstrap to make sure a lock exists. `nixupdate` deliberately runs `nix flake update`, which is the action that advances those revisions. `nixapply` never advances them.
 
-Because `/etc/nixos` is only a symlink, a `git pull` from either path updates the same repository. You never need to pull twice.
+## Storage
 
-Use `nixupdate` when you also want to advance the rolling package/input versions.
-
-## flake.lock and rolling updates
-
-`flake.nix` follows rolling inputs such as `nixos-unstable`; `flake.lock` records the exact revisions currently selected. Keeping `flake.lock` in Git does **not** stop rolling updates — `nixupdate` advances it whenever you choose to update.
-
-On a brand-new repo with no lock file, the installer runs:
-
-```bash
-nix flake lock
-```
-
-This creates the initial lock from the currently resolvable inputs. It is not the normal rolling-update command. If a committed `flake.lock` already exists, `nix flake lock` keeps existing locked revisions and only fills missing entries. Actual version advancement remains explicit through `nixupdate` (`nix flake update`).
-
-After the first successful boot, save the known-good checkpoint if `flake.lock` is staged:
-
-```bash
-cd ~/Desktop/nixos-config
-git commit -m "lock working system"
-git push
-```
-
-Later:
+The existing data disks are never Disko format targets:
 
 ```text
-nixupdate
-  -> flake.lock advances
-  -> new NixOS boot generation is built
-  -> reboot into the new generation
-  -> if everything works, commit flake.lock
+/data/NVMe_1TB   -> UUID d28ebb9a-91e7-42e9-b68c-ce7725a7bfd9
+/data/SATA_480G  -> UUID a2ec5392-7770-4f1c-8f1f-ba7ceb9059a3
 ```
 
-If a new generation is bad, choose the previous NixOS generation in systemd-boot. If the bad `flake.lock` was not committed yet, restore it with Git before rebuilding.
+Homelab SMB shares are lazy-mounted so an unavailable server cannot block boot:
 
-Nix GC retains unreachable store paths for 30 days to leave a larger rollback window.
+```text
+/data/datapool        -> //192.168.1.102/datapool
+/data/fastpool-config -> //192.168.1.102/fastpool-config
+```
+
+## Rollback model
+
+```text
+NixOS generations  -> operating-system rollback
+Git + flake.lock   -> exact declarative input revisions
+Snapper /home      -> user-file recovery
+Nix GC             -> unreachable store paths retained for 30 days
+```
 
 ## Desktop policy
 
