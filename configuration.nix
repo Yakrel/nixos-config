@@ -73,7 +73,7 @@
   environment.plasma6.excludePackages = with pkgs.kdePackages; [
     konsole   # Kitty
     kate      # VS Code
-    elisa     # Jellyfin Desktop / browser
+    elisa     # Plezy / browser
     okular    # Brave has a built-in PDF viewer
     discover  # Packages are managed declaratively with Nix
     khelpcenter
@@ -122,7 +122,7 @@
     brave-origin
     vscode
     vlc
-    jellyfin-desktop
+    plezy
     obsidian
     thunderbird
   ];
