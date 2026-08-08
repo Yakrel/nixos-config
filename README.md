@@ -9,10 +9,10 @@ i5-13400F · 32 GB RAM · AMD RX 9060 XT · Samsung 990 PRO 2TB · KDE Plasma 6
 Create or rotate the encrypted Linux login password from a running NixOS checkout:
 
 ```bash
-nix shell .#bootstrap-tools -c bash ./bootstrap/create-linux-password.sh
+nix shell nixpkgs#age nixpkgs#whois -c bash ./bootstrap/create-linux-password.sh
 ```
 
-The temporary shell provides `age` and `mkpasswd`; neither is installed into the workstation configuration. The helper asks for the Linux login password locally, converts it to a yescrypt hash, then asks for a separate age master passphrase and writes only `bootstrap/linux-password.age`. Commit only that encrypted file; never commit either password or a decrypted hash.
+The temporary shell provides `age` and `mkpasswd`; neither is installed into the workstation configuration and the command does not create a repo-local flake lock. The helper asks for the Linux login password locally, converts it to a yescrypt hash, then asks for a separate age master passphrase and writes only `bootstrap/linux-password.age`. Commit only that encrypted file; never commit either password or a decrypted hash.
 
 ## Fresh install
 
