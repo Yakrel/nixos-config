@@ -90,6 +90,11 @@
     pulse.enable = true;
   };
 
+  programs.gemini-dikte = {
+    enable = true;
+    user = "byetgin";
+  };
+
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;

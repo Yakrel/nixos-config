@@ -12,9 +12,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nur.url = "github:nix-community/NUR";
+    ai-dikte = {
+      url = "github:Yakrel/ai-dikte";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, home-manager, disko, nur, ... }:
+  outputs = { nixpkgs, home-manager, disko, nur, ai-dikte, ... }:
   let
     # Fresh install only — update this when reinstalling from a new ISO.
     # Never change on a running system (breaks stateful service compatibility).
@@ -28,6 +32,7 @@
         { nixpkgs.overlays = [ nur.overlays.default ]; }
         disko.nixosModules.disko
         ./disko.nix
+        ai-dikte.nixosModules.default
         ./configuration.nix
         home-manager.nixosModules.home-manager
         {

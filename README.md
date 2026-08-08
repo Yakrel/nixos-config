@@ -30,6 +30,13 @@ git commit -m "chore: save initial flake lock (YYYY-MM-DD)"
 git push
 ```
 
+Configure Gemini Dictation once:
+
+```bash
+gemini-dikte setup
+gemini-dikte doctor
+```
+
 Save a clean `/home` baseline:
 
 ```bash
