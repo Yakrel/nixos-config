@@ -15,11 +15,11 @@ path.parent.mkdir(parents=True, exist_ok=True)
 if path.exists():
     text = path.read_text(encoding="utf-8")
 else:
-    text = '''<?xml version="1.0" encoding="UTF-8"?>
+    text = """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE xbel>
 <xbel xmlns:mime="http://www.freedesktop.org/standards/shared-mime-info" xmlns:kdepriv="http://www.kde.org/kdepriv" xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks" version="1.0">
 </xbel>
-'''
+"""
 
 places = [
     ("datapool", "smb://192.168.1.102/datapool"),

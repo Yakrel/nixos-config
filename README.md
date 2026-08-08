@@ -85,15 +85,6 @@ If an update is bad, boot the previous NixOS generation from systemd-boot, then 
 git -C ~/Desktop/nixos-config restore flake.lock
 ```
 
-## Network shares
-
-Dolphin Places is seeded with `datapool` and `fastpool-config`. They open through KDE/KIO, so KDE asks for credentials when needed and can remember them in the session/wallet; no SMB username or password is stored in this repository.
-
-```text
-smb://192.168.1.102/datapool
-smb://192.168.1.102/fastpool-config
-```
-
 ## Useful checks
 
 ```bash
