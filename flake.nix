@@ -27,12 +27,10 @@
     # Never change on a running system (breaks stateful service compatibility).
     nixosVersion = "26.11";
   in {
-    # Live-installer/bootstrap tools only. These are not installed into the
-    # resulting NixOS system unless explicitly added to systemPackages later.
-    packages.${system}.bootstrap-tools = pkgs.buildEnv {
-      name = "nixos-bootstrap-tools";
-      paths = [ pkgs.age pkgs.whois ];
-    };
+    # Live-installer-only tool. Exposing it as a flake package makes the
+    # installer use the same locked nixpkgs revision without installing age
+    # into the resulting workstation system.
+    packages.${system}.bootstrap-age = pkgs.age;
 
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
       inherit system;
