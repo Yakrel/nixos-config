@@ -32,7 +32,7 @@
 - Run the built `system.build.diskoScript` instead of fetching a separate latest Disko CLI, so disk formatting uses the same locked Disko module revision as the NixOS configuration.
 - Install the already-built system closure with `nixos-install --system`; do not re-resolve the flake after the disk has been erased.
 - After installation, copy that exact temporary Git checkout, including `.git` and its `flake.lock`, to `/home/byetgin/Desktop/nixos-config`, then make it owned by `byetgin:users`. Do not clone or lock a second time.
-- The age password bootstrap is fresh-install-only. Build `bootstrap-tools` from the locked flake in the live environment; do not add `age` or `whois` to the installed workstation packages. Decrypt and validate the yescrypt hash before touching the disk, then feed only that hash to `chpasswd -e` after installation. Never pass the plaintext Linux password to the installer.
+- The age password bootstrap is fresh-install-only. Build `bootstrap-age` from the locked flake in the live environment; do not add `age` or `whois` to the installed workstation packages. Decrypt and validate the yescrypt hash before touching the disk, then feed only that hash to `chpasswd -e` after installation. Never pass the plaintext Linux password to the installer.
 - The installer must not automatically stage, commit or push `flake.lock`; the user saves the checkpoint only after verifying a successful boot.
 - After the first successful boot, commit and push the initial `flake.lock` as the first known-good checkpoint, then take a manual `/home` Snapper baseline.
 - After every intentional `nixupdate`, reboot into the new generation and verify the system before committing the changed `flake.lock`.
