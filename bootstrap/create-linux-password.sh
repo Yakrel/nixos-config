@@ -17,7 +17,7 @@ trap cleanup EXIT
 for command in age mkpasswd; do
   if ! command -v "$command" >/dev/null 2>&1; then
     echo "ERROR: $command is not available." >&2
-    echo "Run this helper through: nix shell .#bootstrap-tools -c ./bootstrap/create-linux-password.sh" >&2
+    echo "Run this helper through: nix shell .#bootstrap-tools -c bash ./bootstrap/create-linux-password.sh" >&2
     exit 1
   fi
 done
