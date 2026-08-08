@@ -64,6 +64,7 @@
 
   services.xserver.enable = true;
   services.displayManager.sddm.enable = true;
+  services.displayManager.sddm.autoNumlock = true;
   services.desktopManager.plasma6.enable = true;
 
   # Thunderbird replaces KDE PIM; avoid pulling Akonadi/KDEPIM runtime.
