@@ -1,9 +1,9 @@
 { pkgs, ... }:
 
 {
-  # Registers Fish as a system shell (/etc/shells).
-  # User config (Pure prompt, aliases, zoxide) lives in Home Manager.
-  programs.fish.enable = true;
+  # Registers Zsh as a system shell (/etc/shells).
+  # User config (Oh My Zsh, aliases, zoxide) lives in Home Manager.
+  programs.zsh.enable = true;
 
   environment.systemPackages = with pkgs; [
     kitty
