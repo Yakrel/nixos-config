@@ -1,11 +1,11 @@
 { pkgs, lib, ... }:
 
 let
-  # Photo by Tyler Lastovich on Unsplash (ddLiNMqWAOM).
+  # Photo by Bailey Zindel on Unsplash (Dark Minimalist Cyber Mountain).
   wallpaper = pkgs.fetchurl {
-    url = "https://images.unsplash.com/photo-1554176259-aa961fc32671?ixlib=rb-4.0.3&q=85&fm=jpg&crop=entropy&cs=srgb&dl=tyler-lastovich-ddLiNMqWAOM-unsplash.jpg";
-    hash = "sha256-+pjhBCVwjuzx/r11nqZJI79FPhuPGqrzD1Hd90nEQys=";
-    name = "tyler-lastovich-ddLiNMqWAOM-unsplash.jpg";
+    url = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2560&auto=format&fit=crop";
+    hash = "sha256-3QmiRYbsPnlPmlbf8x1kX3CNsHMxBvmXJhXZceJ6aRk=";
+    name = "bailey-zindel-unsplash-mountain.jpg";
   };
 
   wallpaperActivator = pkgs.writeShellApplication {
