@@ -4,6 +4,16 @@ Personal NixOS Unstable workstation config.
 
 i5-13400F · 32 GB RAM · AMD RX 9060 XT · Samsung 990 PRO 2TB · KDE Plasma 6
 
+## Fresh-install password bootstrap
+
+Create or rotate the encrypted Linux login password from a running NixOS checkout:
+
+```bash
+nix shell .#bootstrap-tools -c bash ./bootstrap/create-linux-password.sh
+```
+
+The temporary shell provides `age` and `mkpasswd`; neither is installed into the workstation configuration. The helper asks for the Linux login password locally, converts it to a yescrypt hash, then asks for a separate age master passphrase and writes only `bootstrap/linux-password.age`. Commit only that encrypted file; never commit either password or a decrypted hash.
+
 ## Fresh install
 
 Boot a NixOS 26.11pre minimal ISO with internet access and run:
@@ -12,7 +22,9 @@ Boot a NixOS 26.11pre minimal ISO with internet access and run:
 curl -fL https://nixos.byetgin.com/install.sh|sudo bash
 ```
 
-The installer verifies the exact Samsung 990 PRO by stable by-id + serial, builds the locked system first, then automatically formats only that system disk. The 1TB NVMe and 480GB SATA data disks are not installer targets. The `byetgin` password is requested at the end.
+The installer verifies the exact Samsung 990 PRO by stable by-id + serial, builds the locked system first, then asks for the age master passphrase and validates the decrypted password hash before touching the disk. It automatically formats only that system disk; the 1TB NVMe and 480GB SATA data disks are not installer targets. The validated hash is applied directly to the `byetgin` account after installation.
+
+The age bootstrap is fresh-install-only. `age` is not installed in the target system, and `nixapply` / `nixupdate` do not read or decrypt the bootstrap file.
 
 If the repository already contains a committed `flake.lock`, reinstall uses that exact known-good lock. If no lock exists yet, the first install creates one.
 
