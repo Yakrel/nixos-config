@@ -1,6 +1,6 @@
 ## Rules
 - Never `git commit` or `git push` without explicit user approval
-- Never put credentials, SMB usernames, passwords or other secrets in the repository
+- Never put plaintext credentials, SMB usernames, passwords, decrypted password hashes or other plaintext secrets in the repository. Fresh-install `bootstrap/*.age` ciphertext generated locally may be committed when the user explicitly asks for bootstrap secret storage; never commit the age master passphrase.
 - Use KDE/Dolphin KIO (`smb://...`) for the homelab shares by default; seed `datapool` and `fastpool-config` into Dolphin Places while preserving the user's mutable `user-places.xbel`; do not add system-level CIFS mounts or credential files unless the user explicitly asks for them
 - Keep README operational and concise: install, first-boot, update, rollback and essential commands; do not duplicate implementation details already clear from the Nix code
 - Never target an install disk by volatile names such as `/dev/nvme0n1`; use the verified stable by-id path
@@ -18,6 +18,7 @@
 - Use normal Git commands for repository synchronization; do not invent a `nixpull` alias or hide Git operations behind Nix-named aliases
 - `nixapply`: rebuild/apply the current configuration using the existing `flake.lock`; use this after adding/removing packages, changing KDE/Home Manager settings, services, mounts, aliases, etc.
 - `nixupdate`: intentionally advance flake inputs (`nix flake update`) and build the next boot generation; this is the command that normally changes `flake.lock`
+- Fresh-install bootstrap secrets are installer-only state. `nixapply`, `nixupdate`, Home Manager and normal rebuilds must not decrypt or depend on `bootstrap/*.age`.
 - Prefer a clean Git working tree before `git pull`; local work may be committed without being pushed first, but do not discard or overwrite local changes automatically
 
 ## flake.lock policy
@@ -31,7 +32,7 @@
 - Run the built `system.build.diskoScript` instead of fetching a separate latest Disko CLI, so disk formatting uses the same locked Disko module revision as the NixOS configuration.
 - Install the already-built system closure with `nixos-install --system`; do not re-resolve the flake after the disk has been erased.
 - After installation, copy that exact temporary Git checkout, including `.git` and its `flake.lock`, to `/home/byetgin/Desktop/nixos-config`, then make it owned by `byetgin:users`. Do not clone or lock a second time.
-- When `install.sh` is piped from curl, attach the final `passwd byetgin` call to `/dev/tty` so it reads the real keyboard rather than the pipe.
+- The age password bootstrap is fresh-install-only. Build `bootstrap-tools` from the locked flake in the live environment; do not add `age` or `whois` to the installed workstation packages. Decrypt and validate the yescrypt hash before touching the disk, then feed only that hash to `chpasswd -e` after installation. Never pass the plaintext Linux password to the installer.
 - The installer must not automatically stage, commit or push `flake.lock`; the user saves the checkpoint only after verifying a successful boot.
 - After the first successful boot, commit and push the initial `flake.lock` as the first known-good checkpoint, then take a manual `/home` Snapper baseline.
 - After every intentional `nixupdate`, reboot into the new generation and verify the system before committing the changed `flake.lock`.
