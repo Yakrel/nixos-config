@@ -92,8 +92,8 @@ fi
 
 DISKO_SCRIPT="$(nix_cmd build --no-link --print-out-paths "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.system.build.diskoScript")"
 SYSTEM_PATH="$(nix_cmd build --no-link --print-out-paths "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.system.build.toplevel")"
-BOOTSTRAP_TOOLS="$(nix_cmd build --no-link --print-out-paths "${LOCAL_FLAKE}#bootstrap-tools")"
-AGE_BIN="$BOOTSTRAP_TOOLS/bin/age"
+AGE_PATH="$(nix_cmd build --no-link --print-out-paths "${LOCAL_FLAKE}#bootstrap-age")"
+AGE_BIN="$AGE_PATH/bin/age"
 
 echo
 echo "Locked install artifacts are ready."
