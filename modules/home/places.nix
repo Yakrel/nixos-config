@@ -31,7 +31,7 @@ for title, url in places:
     if f'href="{url}"' in text:
         continue
 
-    sep_pos = text.find("<separator>")
+    sep_pos = text.find("<separator")
     insert_pos = sep_pos if sep_pos != -1 else text.rfind("</xbel>")
     if insert_pos == -1:
         raise RuntimeError(f"Invalid KDE Places file: {path}")
