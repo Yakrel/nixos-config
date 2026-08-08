@@ -114,7 +114,7 @@
     uid = 1000;
     description = "Berkay Yetgin";
     extraGroups = [ "networkmanager" "wheel" ];
-    shell = pkgs.fish;
+    shell = pkgs.zsh;
   };
 
   nixpkgs.config.allowUnfree = true;
