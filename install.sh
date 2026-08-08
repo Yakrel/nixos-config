@@ -10,8 +10,11 @@ EXPECTED_SERIAL="S7DRNJ0Y104863E"
 WORK_ROOT="$(mktemp -d)"
 WORK_DIR="$WORK_ROOT/nixos-config"
 LOCAL_FLAKE="path:$WORK_DIR"
+PASSWORD_SECRET="$WORK_DIR/bootstrap/linux-password.age"
+PASSWORD_HASH=""
 
 cleanup() {
+  unset PASSWORD_HASH
   rm -rf "$WORK_ROOT"
 }
 trap cleanup EXIT
@@ -20,7 +23,7 @@ nix_cmd() {
   nix --extra-experimental-features "nix-command flakes" "$@"
 }
 
-echo "==> [1/7] Cloning and locking the install configuration..."
+echo "==> [1/8] Cloning and locking the install configuration..."
 git clone --quiet "$REPO_URL" "$WORK_DIR"
 echo "Config commit: $(git -C "$WORK_DIR" rev-parse --short HEAD)"
 
@@ -41,7 +44,7 @@ if [[ "$LOCK_WAS_COMMITTED" == true ]] && ! git -C "$WORK_DIR" diff --quiet -- f
   exit 1
 fi
 
-echo "==> [2/7] Resolving and checking installer target..."
+echo "==> [2/8] Resolving and checking installer target..."
 # Disko is the single source of truth for the destructive target. Keep the
 # serial check independent so a mistaken target change fails closed.
 INSTALL_DISK_BY_ID="$(nix_cmd eval --raw "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.disko.devices.disk.main.device")"
@@ -79,7 +82,7 @@ echo "Serial:      $ACTUAL_SERIAL"
 echo "Size:        $ACTUAL_SIZE"
 echo
 
-echo "==> [3/7] Building the exact locked installer artifacts before touching the disk..."
+echo "==> [3/8] Building the exact locked installer artifacts before touching the disk..."
 if ! nix_cmd eval --raw "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.system.build.toplevel.drvPath" >/dev/null; then
   echo
   echo "ERROR: The locked NixOS configuration could not be evaluated."
@@ -89,22 +92,54 @@ fi
 
 DISKO_SCRIPT="$(nix_cmd build --no-link --print-out-paths "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.system.build.diskoScript")"
 SYSTEM_PATH="$(nix_cmd build --no-link --print-out-paths "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.system.build.toplevel")"
+BOOTSTRAP_TOOLS="$(nix_cmd build --no-link --print-out-paths "${LOCAL_FLAKE}#bootstrap-tools")"
+AGE_BIN="$BOOTSTRAP_TOOLS/bin/age"
 
 echo
 echo "Locked install artifacts are ready."
 echo "Disko:  $DISKO_SCRIPT"
 echo "System: $SYSTEM_PATH"
+
+echo "==> [4/8] Unlocking the fresh-install password bootstrap..."
+if [[ ! -f "$PASSWORD_SECRET" ]]; then
+  echo
+  echo "ERROR: Missing bootstrap/linux-password.age."
+  echo "Generate and commit the encrypted password hash before a fresh install."
+  echo "No disk changes were made."
+  exit 1
+fi
+
+# age reads the passphrase interactively from the controlling terminal. Only
+# the already-hashed Linux password is decrypted; the plaintext login password
+# is never stored in this repository or passed to the installer.
+if ! PASSWORD_HASH="$("$AGE_BIN" --decrypt "$PASSWORD_SECRET" </dev/tty)"; then
+  echo
+  echo "ERROR: Could not decrypt bootstrap/linux-password.age."
+  echo "No disk changes were made."
+  exit 1
+fi
+
+# The helper intentionally generates yescrypt hashes. Reject malformed or
+# multi-line decrypted content before any destructive disk operation.
+if [[ -z "$PASSWORD_HASH" || "$PASSWORD_HASH" == *$'\n'* || "$PASSWORD_HASH" != \$y\$* ]]; then
+  echo
+  echo "ERROR: The decrypted bootstrap secret is not a single yescrypt password hash."
+  echo "No disk changes were made."
+  exit 1
+fi
+
+echo "Password bootstrap unlocked and validated."
 echo
 echo "Verified target: $INSTALL_DISK ($ACTUAL_MODEL, serial $ACTUAL_SERIAL)"
 echo "Beginning automatic erase/install; no additional disk confirmation is requested."
 
-echo "==> [4/7] Formatting and mounting the verified system disk..."
+echo "==> [5/8] Formatting and mounting the verified system disk..."
 bash "$DISKO_SCRIPT"
 
-echo "==> [5/7] Installing the prebuilt locked NixOS system..."
+echo "==> [6/8] Installing the prebuilt locked NixOS system..."
 nixos-install --no-root-passwd --system "$SYSTEM_PATH"
 
-echo "==> [6/7] Installing the exact Git checkout used for this install..."
+echo "==> [7/8] Installing the exact Git checkout used for this install..."
 install -d -m 0755 "/mnt/home/byetgin/Desktop"
 rm -rf "/mnt$CONFIG_DIR"
 cp -a "$WORK_DIR" "/mnt$CONFIG_DIR"
@@ -115,14 +150,16 @@ ln -s "$CONFIG_DIR" /mnt/etc/nixos
 # The checkout was cloned by root on the live ISO; make the real working copy user-owned.
 nixos-enter --root /mnt -c 'chown -R byetgin:users /home/byetgin/Desktop/nixos-config'
 
-echo "==> [7/7] Setting password for user byetgin..."
-# install.sh is normally executed via `curl | sudo bash`, so stdin is the pipe.
-# Explicitly attach passwd to the controlling terminal so it reads the keyboard.
-nixos-enter --root /mnt -c 'passwd byetgin' </dev/tty
+echo "==> [8/8] Applying the bootstrapped password for user byetgin..."
+# Feed only the encrypted-password hash through stdin so it never appears in a
+# process argument. chpasswd -e writes the supplied hash directly to shadow.
+printf 'byetgin:%s\n' "$PASSWORD_HASH" | nixos-enter --root /mnt -c 'chpasswd -e'
+unset PASSWORD_HASH
 
 echo
 echo "Done. Reboot when ready."
 echo "Config repo: $CONFIG_DIR (owned by byetgin)"
 echo "/etc/nixos -> $CONFIG_DIR"
 echo "The installed checkout contains the exact flake.lock used for this installation."
+echo "The age bootstrap was used only by the live installer; age is not installed in the target system."
 echo "After a successful boot, review git status and commit/push flake.lock if it is new."
