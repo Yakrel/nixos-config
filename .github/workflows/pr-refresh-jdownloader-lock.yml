@@ -1,0 +1,21 @@
+name: PR Refresh JDownloader Lock
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v21
+      - name: Refresh interceptor input
+        run: nix flake update jdownloader-interceptor
+      - name: Print updated lock
+        run: |
+          echo '===== UPDATED_FLAKE_LOCK_BEGIN ====='
+          cat flake.lock
+          echo '===== UPDATED_FLAKE_LOCK_END ====='
