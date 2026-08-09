@@ -35,4 +35,10 @@
     enable = true;
     interval = "monthly";
   };
+
+  # Monitor SATA/NVMe hardware health and surface warnings in Plasma.
+  services.smartd = {
+    enable = true;
+    notifications.systembus-notify.enable = true;
+  };
 }
