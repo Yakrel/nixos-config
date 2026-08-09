@@ -1,10 +1,9 @@
-{ pkgs, ... }:
+{ ... }:
 
 let
-  # Official KDE Plasma Safe Landing wallpaper. Its warm illustrated palette
-  # fits Breeze Dark while giving the desktop more character than Mountain.
-  # 5120x2880 scales cleanly to the workstation's 2560x1440 display.
-  wallpaper = "${pkgs.kdePackages.plasma-workspace-wallpapers}/share/wallpapers/SafeLanding/contents/images/5120x2880.jpg";
+  # Repo-owned NixOS crystal wallpaper, rendered at the workstation's native
+  # 2560x1440 resolution and stored with the configuration.
+  wallpaper = "${../../assets/wallpapers/nixos-crystal-2560x1440.webp}";
 in
 {
   programs.plasma = {
