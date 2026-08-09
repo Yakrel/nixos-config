@@ -84,11 +84,11 @@
     "jdownloader-interceptor": {
       "flake": false,
       "locked": {
-        "lastModified": 1786185104,
-        "narHash": "sha256-Mh3qId8fTmKdbqVriv26LkoqoFpGsvJvN3ZfDhl/ZQM=",
+        "lastModified": 1786269208,
+        "narHash": "sha256-MxF9Qb2BUFNEjrJwmiNQq9ctZqC5ifERmAhOSkx5KaY=",
         "owner": "Yakrel",
         "repo": "jdownloader-download-interceptor",
-        "rev": "d31cff4812429593028510f2a431a0d45a29d158",
+        "rev": "de10044c67ae4f23b7e88ed471c4cd0035be0328",
         "type": "github"
       },
       "original": {
