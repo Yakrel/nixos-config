@@ -68,6 +68,27 @@
   services.displayManager.sddm.autoNumlock = true;
   services.desktopManager.plasma6.enable = true;
 
+  # SDDM's Wayland greeter runs under the sddm user's KWin session. Keep the
+  # tested KWin NumLock setting declarative instead of relying on a hand-written
+  # file in /var/lib/sddm. KDE/KWin uses 0 for "NumLock on".
+  systemd.tmpfiles.settings."10-sddm-numlock" = {
+    "/var/lib/sddm/.config".d = {
+      mode = "0700";
+      user = "sddm";
+      group = "sddm";
+    };
+
+    "/var/lib/sddm/.config/kcminputrc"."f+" = {
+      mode = "0600";
+      user = "sddm";
+      group = "sddm";
+      argument = ''
+        [Keyboard]
+        NumLock=0
+      '';
+    };
+  };
+
   # Thunderbird replaces KDE PIM; avoid pulling Akonadi/KDEPIM runtime.
   programs.kde-pim.enable = false;
 
