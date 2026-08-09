@@ -5,6 +5,7 @@
     ./modules/hardware.nix
     ./modules/storage.nix
     ./modules/terminal.nix
+    ./modules/brave.nix
   ];
 
   # Boot
@@ -122,10 +123,8 @@
 
   environment.systemPackages = with pkgs; [
     git
-    gh
     pciutils
     nur.repos.jeffguorg.oh-my-pi-bin
-    brave-origin
     vscode
     vlc
     jellyfin-desktop
