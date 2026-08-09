@@ -1,12 +1,10 @@
 { pkgs, ... }:
 
 let
-  # Photo by Bailey Zindel on Unsplash (Dark Minimalist Cyber Mountain).
-  wallpaper = pkgs.fetchurl {
-    url = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2560&auto=format&fit=crop";
-    hash = "sha256-Fha4FYN5+u8zgK6+EMZwxwQtxulYjgKBGLy3cS9u++Y=";
-    name = "bailey-zindel-unsplash-mountain.jpg";
-  };
+  # Official KDE Plasma Mountain wallpaper, dark 16:9 variant. The source is
+  # already part of nixpkgs, so there is no separate URL/hash to drift.
+  # 5120x2880 scales cleanly to the workstation's 2560x1440 display.
+  wallpaper = "${pkgs.kdePackages.plasma-workspace-wallpapers}/share/wallpapers/Mountain/contents/images_dark/5120x2880.png";
 in
 {
   programs.plasma = {
