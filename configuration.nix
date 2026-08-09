@@ -10,6 +10,7 @@
 
   # Boot
   boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot.configurationLimit = 10;
   boot.loader.efi.canTouchEfiVariables = true;
 
   # Track the newest stable kernel packaged by nixos-unstable (never an RC).
