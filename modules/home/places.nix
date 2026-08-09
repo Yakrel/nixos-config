@@ -1,9 +1,14 @@
 { lib, pkgs, ... }:
 
 {
-  # Seed homelab SMB locations into KDE/Dolphin Places without system CIFS
-  # mounts or credentials in Git. The file stays user-owned and mutable, and
-  # existing Places entries are preserved.
+  # Deliberate last-resort exception to the typed-option rule:
+  # plasma-manager/Home Manager currently has no high-level option for
+  # incrementally seeding Dolphin's mutable user-places.xbel. Managing the
+  # whole file with xdg.dataFile/home.file would make Nix own the complete
+  # bookmark set and would fight normal add/remove operations in Dolphin.
+  #
+  # This activation therefore only inserts the two missing homelab locations,
+  # preserves every user-managed entry, and never stores SMB credentials.
   home.activation.seedDolphinPlaces = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     ${pkgs.python3}/bin/python3 <<'PY'
 from pathlib import Path

@@ -1,4 +1,51 @@
-{ ... }: {
-  # kitty.conf → linked to ~/.config/kitty/kitty.conf
-  xdg.configFile."kitty/kitty.conf".source = ../kitty.conf;
+{ ... }:
+
+{
+  programs.kitty = {
+    enable = true;
+
+    font = {
+      name = "JetBrainsMono Nerd Font";
+      size = 11;
+    };
+
+    # Keep the terminal configuration under Home Manager's native Kitty module
+    # instead of linking a hand-maintained kitty.conf into ~/.config.
+    settings = {
+      background_opacity = 0.92;
+      window_padding_width = 10;
+      tab_bar_style = "powerline";
+
+      foreground = "#a9b1d6";
+      background = "#1a1b26";
+      selection_foreground = "#a9b1d6";
+      selection_background = "#28344a";
+      cursor = "#c0caf5";
+      cursor_text_color = "#1a1b26";
+      url_color = "#73daca";
+      active_border_color = "#7aa2f7";
+      inactive_border_color = "#292e42";
+      active_tab_foreground = "#16161e";
+      active_tab_background = "#7aa2f7";
+      inactive_tab_foreground = "#a9b1d6";
+      inactive_tab_background = "#1f2335";
+
+      color0 = "#15161e";
+      color8 = "#414868";
+      color1 = "#f7768e";
+      color9 = "#f7768e";
+      color2 = "#9ece6a";
+      color10 = "#9ece6a";
+      color3 = "#e0af68";
+      color11 = "#e0af68";
+      color4 = "#7aa2f7";
+      color12 = "#7aa2f7";
+      color5 = "#bb9af7";
+      color13 = "#bb9af7";
+      color6 = "#7dcfff";
+      color14 = "#7dcfff";
+      color7 = "#a9b1d6";
+      color15 = "#c0caf5";
+    };
+  };
 }
