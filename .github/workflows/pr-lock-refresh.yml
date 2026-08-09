@@ -1,0 +1,21 @@
+name: PR Lock Refresh
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v21
+      - name: Refresh lock for declared inputs
+        run: nix flake lock
+      - name: Upload lock
+        uses: actions/upload-artifact@v4
+        with:
+          name: flake-lock
+          path: flake.lock
