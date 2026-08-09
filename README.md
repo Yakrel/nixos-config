@@ -37,7 +37,11 @@ git commit -m "chore: save initial flake lock"
 git push
 ```
 
-Take a manual Snapper baseline for `/home` after the first successful boot.
+Take a manual Snapper baseline for `/home` after the first successful boot:
+
+```bash
+sudo snapper -c home create --description "baseline after fresh install"
+```
 
 ## Apply config changes
 
