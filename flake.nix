@@ -16,7 +16,10 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nur.url = "github:nix-community/NUR";
+    nur = {
+      url = "github:nix-community/NUR";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     ai-dikte = {
       url = "github:Yakrel/ai-dikte";
       inputs.nixpkgs.follows = "nixpkgs";

@@ -1,10 +1,10 @@
 { pkgs, ... }:
 
 let
-  # Official KDE Plasma Mountain wallpaper, dark 16:9 variant. The source is
-  # already part of nixpkgs, so there is no separate URL/hash to drift.
+  # Official KDE Plasma Safe Landing wallpaper. Its warm illustrated palette
+  # fits Breeze Dark while giving the desktop more character than Mountain.
   # 5120x2880 scales cleanly to the workstation's 2560x1440 display.
-  wallpaper = "${pkgs.kdePackages.plasma-workspace-wallpapers}/share/wallpapers/Mountain/contents/images_dark/5120x2880.png";
+  wallpaper = "${pkgs.kdePackages.plasma-workspace-wallpapers}/share/wallpapers/SafeLanding/contents/images/5120x2880.jpg";
 in
 {
   programs.plasma = {
