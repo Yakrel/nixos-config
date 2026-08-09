@@ -4,7 +4,7 @@ let
   # Photo by Bailey Zindel on Unsplash (Dark Minimalist Cyber Mountain).
   wallpaper = pkgs.fetchurl {
     url = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2560&auto=format&fit=crop";
-    hash = "sha256-3QmiRYbsPnlPmlbf8x1kX3CNsHMxBvmXJhXZceJ6aRk=";
+    hash = "sha256-Fha4FYN5+u8zgK6+EMZwxwQtxulYjgKBGLy3cS9u++Y=";
     name = "bailey-zindel-unsplash-mountain.jpg";
   };
 in
