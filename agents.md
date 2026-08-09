@@ -1,6 +1,7 @@
 ## Rules
 - Never `git commit` or `git push` without explicit user approval
 - Never put credentials, SMB usernames, passwords or other secrets in the repository
+- Prefer typed, declarative NixOS/Home Manager/plasma-manager options for system and desktop configuration. Use declarative package overrides or browser policies when no higher-level module option exists. Do not mutate live user configuration with ad-hoc shell/Python scripts, manual file copies, or post-install commands when a supported declarative option exists; keep activation/runtime scripting as a documented last resort only when the target application has no suitable declarative interface. Shell used only inside a Nix derivation to construct an immutable store output is acceptable packaging, and `install.sh` may remain imperative fresh-install orchestration; neither should be used to bypass an available module option.
 - Use KDE/Dolphin KIO (`smb://...`) for the homelab shares by default; seed `datapool` and `fastpool-config` into Dolphin Places while preserving the user's mutable `user-places.xbel`; do not add system-level CIFS mounts or credential files unless the user explicitly asks for them
 - Keep README operational and concise: install, first-boot, update, rollback and essential commands; do not duplicate implementation details already clear from the Nix code
 - Never target an install disk by volatile names such as `/dev/nvme0n1`; use the verified stable by-id path
