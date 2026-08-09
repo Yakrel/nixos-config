@@ -33,5 +33,24 @@ jobs:
       - name: Build Disko installer
         run: nix build --no-link --print-build-logs --show-trace '.#nixosConfigurations.nixos.config.system.build.diskoScript'
 
-      - name: Build complete NixOS system
-        run: nix build --no-link --print-build-logs --show-trace '.#nixosConfigurations.nixos.config.system.build.toplevel'
+      - name: Build complete NixOS system and capture diagnostics
+        id: system-build
+        shell: bash
+        run: |
+          set +e
+          nix build --no-link --print-build-logs --show-trace '.#nixosConfigurations.nixos.config.system.build.toplevel' >build.log 2>&1
+          status=$?
+          cat build.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload system build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-build-log
+          path: build.log
+
+      - name: Fail if system build failed
+        if: steps.system-build.outputs.status != '0'
+        run: exit 1
