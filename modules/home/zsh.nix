@@ -17,9 +17,10 @@
       };
 
       shellAliases = {
-        # eza's Home Manager module supplies the normal ls/ll/la aliases and
-        # keeps icon behavior in one typed option. Preserve the convenient
-        # `tree` name and the preferred bat-as-cat alias explicitly.
+        # eza's Home Manager module owns installation/integration and icon
+        # behavior. Preserve the workstation's existing alias semantics.
+        ll = "eza -lh";
+        la = "eza -la";
         tree = "eza --tree";
         cat = "bat";
 
