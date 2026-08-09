@@ -28,4 +28,11 @@
       "x-gvfs-name=SATA_480G"
     ];
   };
+
+  # Scrub verifies Btrfs checksums on the system and both internal data SSDs.
+  # NixOS automatically deduplicates subvolumes that share the same device.
+  services.btrfs.autoScrub = {
+    enable = true;
+    interval = "monthly";
+  };
 }
