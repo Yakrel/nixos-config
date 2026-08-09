@@ -81,6 +81,22 @@
         "type": "github"
       }
     },
+    "jdownloader-interceptor": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786185104,
+        "narHash": "sha256-Mh3qId8fTmKdbqVriv26LkoqoFpGsvJvN3ZfDhl/ZQM=",
+        "owner": "Yakrel",
+        "repo": "jdownloader-download-interceptor",
+        "rev": "d31cff4812429593028510f2a431a0d45a29d158",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Yakrel",
+        "repo": "jdownloader-download-interceptor",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1785967620,
@@ -132,13 +148,38 @@
         "type": "github"
       }
     },
+    "plasma-manager": {
+      "inputs": {
+        "home-manager": [
+          "home-manager"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1785762349,
+        "narHash": "sha256-jZhZkzAwc7f3exzcTDJWP2WCAchCv0iNC3UF/QsahdQ=",
+        "owner": "nix-community",
+        "repo": "plasma-manager",
+        "rev": "a19a2a029fa180911bd89c554dca1616e10f4c1d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "plasma-manager",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "ai-dikte": "ai-dikte",
         "disko": "disko",
         "home-manager": "home-manager",
+        "jdownloader-interceptor": "jdownloader-interceptor",
         "nixpkgs": "nixpkgs",
-        "nur": "nur"
+        "nur": "nur",
+        "plasma-manager": "plasma-manager"
       }
     }
   },
