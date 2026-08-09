@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 
 let
   # Photo by Bailey Zindel on Unsplash (Dark Minimalist Cyber Mountain).
@@ -7,50 +7,62 @@ let
     hash = "sha256-3QmiRYbsPnlPmlbf8x1kX3CNsHMxBvmXJhXZceJ6aRk=";
     name = "bailey-zindel-unsplash-mountain.jpg";
   };
-
-  wallpaperActivator = pkgs.writeShellApplication {
-    name = "apply-plasma-wallpaper";
-    runtimeInputs = [ pkgs.kdePackages.plasma-workspace ];
-    runtimeEnv.QT_QPA_PLATFORM = "minimal";
-    text = ''
-      plasma-apply-wallpaperimage --fill-mode preserveAspectCrop "${wallpaper}"
-    '';
-  };
 in
 {
-  # Lightweight Plasma defaults without plasma-manager. kwriteconfig6 edits only
-  # the relevant KDE keys and does not require a running graphical session.
-  home.activation.kdeCustomizations = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    # Breeze Dark from the first login.
-    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage org.kde.breezedark.desktop
-    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle Breeze
-    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kdeglobals --group General --key ColorScheme BreezeDark
-    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kdeglobals --group Icons --key Theme breeze-dark
-
-    # Force NumLock on when the Plasma session starts (KDE: 0=on, 1=off, 2=unchanged).
-    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kcminputrc --group Keyboard --key NumLock 0
-
-    # Night Light: automatic sunset-to-sunrise schedule from GeoClue.
-    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kwinrc --group NightColor --key Active true
-    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kwinrc --group NightColor --key Mode Automatic
-    $DRY_RUN_CMD ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file kwinrc --group NightColor --key NightTemperature 4500
-
-    # Apply immediately when a Plasma session is available. The autostart entry
-    # below is the reliable fallback for rebuilds performed outside the session.
-    $DRY_RUN_CMD ${wallpaperActivator}/bin/apply-plasma-wallpaper || true
-  '';
-
-  # Re-apply the declarative wallpaper when Plasma starts. KDE cannot reliably
-  # switch an existing wallpaper through static config files alone.
-  xdg.autostart = {
+  programs.plasma = {
     enable = true;
-    entries = [
-      (pkgs.makeDesktopItem {
-        name = "apply-plasma-wallpaper";
-        desktopName = "Apply Plasma wallpaper";
-        exec = "${wallpaperActivator}/bin/apply-plasma-wallpaper";
-        extraConfig.X-KDE-AutostartScript = "true";
-      } + /share/applications/apply-plasma-wallpaper.desktop)
+
+    workspace = {
+      lookAndFeel = "org.kde.breezedark.desktop";
+      widgetStyle = "Breeze";
+      colorScheme = "BreezeDark";
+      iconTheme = "breeze-dark";
+      wallpaper = wallpaper;
+      wallpaperFillMode = "preserveAspectCrop";
+    };
+
+    input.keyboard.numlockOnStartup = "on";
+
+    kwin.nightLight = {
+      enable = true;
+      mode = "automatic";
+      temperature.night = 4500;
+    };
+
+    # Keep the standard Plasma panel widgets, but make the task-manager pins
+    # deterministic and limited to Dolphin, the preferred browser, and Kitty.
+    panels = [
+      {
+        location = "bottom";
+        floating = true;
+        widgets = [
+          "org.kde.plasma.kickoff"
+          "org.kde.plasma.pager"
+          {
+            iconTasks.launchers = [
+              "preferred://filemanager"
+              "preferred://browser"
+              "applications:kitty.desktop"
+            ];
+          }
+          "org.kde.plasma.marginsseparator"
+          "org.kde.plasma.systemtray"
+          "org.kde.plasma.digitalclock"
+          "org.kde.plasma.showdesktop"
+        ];
+      }
     ];
+  };
+
+  # Make preferred://browser deterministic on a fresh install so the Plasma
+  # launcher resolves to Brave Origin without requiring a GUI default-app step.
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "text/html" = [ "brave-origin.desktop" ];
+      "application/xhtml+xml" = [ "brave-origin.desktop" ];
+      "x-scheme-handler/http" = [ "brave-origin.desktop" ];
+      "x-scheme-handler/https" = [ "brave-origin.desktop" ];
+    };
   };
 }
