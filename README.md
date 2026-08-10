@@ -84,3 +84,21 @@ nvd diff /run/booted-system /run/current-system
 sudo nixos-rebuild list-generations
 snapper -c home list
 ```
+
+## Post-install notes
+
+### Jellium video stutter on high-refresh displays
+
+If 23.976 FPS playback shows periodic micro-stutter or frame drops on a high-refresh display (for example 144 Hz), try mpv's display-resample sync mode. Jellium explicitly loads a per-user mpv config from:
+
+```text
+~/.config/jellium-desktop/mpv/mpv.conf
+```
+
+Add:
+
+```conf
+video-sync=display-resample
+```
+
+Keep this as a troubleshooting tweak rather than a mandatory default; if Jellium plays smoothly without it, no change is needed.
