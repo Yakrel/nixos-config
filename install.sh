@@ -20,7 +20,18 @@ nix_cmd() {
   nix --extra-experimental-features "nix-command flakes" "$@"
 }
 
-echo "==> [1/7] Cloning and locking the install configuration..."
+storage_diagnostics() {
+  echo
+  echo "Btrfs device stats:"
+  btrfs device stats /mnt || true
+  echo
+  echo "Recent Btrfs/NVMe kernel messages:"
+  journalctl -k --no-pager \
+    | grep -Ei 'btrfs|nvme|checksum|corrupt|i/o error|reset|timeout|critical' \
+    | tail -200 || true
+}
+
+echo "==> [1/8] Cloning and locking the install configuration..."
 git clone --quiet "$REPO_URL" "$WORK_DIR"
 echo "Config commit: $(git -C "$WORK_DIR" rev-parse --short HEAD)"
 
@@ -41,7 +52,7 @@ if [[ "$LOCK_WAS_COMMITTED" == true ]] && ! git -C "$WORK_DIR" diff --quiet -- f
   exit 1
 fi
 
-echo "==> [2/7] Resolving and checking installer target..."
+echo "==> [2/8] Resolving and checking installer target..."
 # Disko is the single source of truth for the destructive target. Keep the
 # serial check independent so a mistaken target change fails closed.
 INSTALL_DISK_BY_ID="$(nix_cmd eval --raw "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.disko.devices.disk.main.device")"
@@ -79,7 +90,7 @@ echo "Serial:      $ACTUAL_SERIAL"
 echo "Size:        $ACTUAL_SIZE"
 echo
 
-echo "==> [3/7] Building the exact locked installer artifacts before touching the disk..."
+echo "==> [3/8] Building the exact locked installer artifacts before touching the disk..."
 if ! nix_cmd eval --raw "${LOCAL_FLAKE}#nixosConfigurations.nixos.config.system.build.toplevel.drvPath" >/dev/null; then
   echo
   echo "ERROR: The locked NixOS configuration could not be evaluated."
@@ -98,13 +109,46 @@ echo
 echo "Verified target: $INSTALL_DISK ($ACTUAL_MODEL, serial $ACTUAL_SERIAL)"
 echo "Beginning automatic erase/install; no additional disk confirmation is requested."
 
-echo "==> [4/7] Formatting and mounting the verified system disk..."
+echo "==> [4/8] Formatting and mounting the verified system disk..."
 bash "$DISKO_SCRIPT"
 
-echo "==> [5/7] Installing the prebuilt locked NixOS system..."
-nixos-install --no-root-passwd --system "$SYSTEM_PATH"
+echo "==> [5/8] Installing the prebuilt locked NixOS system..."
+if nixos-install --no-root-passwd --system "$SYSTEM_PATH"; then
+  :
+else
+  INSTALL_STATUS=$?
+  echo
+  echo "ERROR: nixos-install failed (status $INSTALL_STATUS)."
+  storage_diagnostics
+  exit "$INSTALL_STATUS"
+fi
 
-echo "==> [6/7] Installing the exact Git checkout used for this install..."
+echo "==> [6/8] Verifying the installed Btrfs filesystem..."
+# Flush pending writes first, then validate every allocated data/metadata block.
+# Device counters are persistent, so this also catches corruption/I/O errors
+# that occurred earlier in the install even if a later retry happened to work.
+sync
+if btrfs scrub start -Bd /mnt; then
+  :
+else
+  SCRUB_STATUS=$?
+  echo
+  echo "ERROR: Btrfs scrub failed (status $SCRUB_STATUS)."
+  storage_diagnostics
+  exit "$SCRUB_STATUS"
+fi
+
+if ! btrfs device stats -c /mnt; then
+  echo
+  echo "ERROR: Btrfs recorded device/filesystem errors during installation."
+  echo "Refusing to mark this installation as successful."
+  storage_diagnostics
+  exit 1
+fi
+
+echo "Btrfs verification passed with zero device error counters."
+
+echo "==> [7/8] Installing the exact Git checkout used for this install..."
 install -d -m 0755 "/mnt/home/byetgin/Desktop"
 rm -rf "/mnt$CONFIG_DIR"
 cp -a "$WORK_DIR" "/mnt$CONFIG_DIR"
@@ -115,13 +159,19 @@ ln -s "$CONFIG_DIR" /mnt/etc/nixos
 # The checkout was cloned by root on the live ISO; make the real working copy user-owned.
 nixos-enter --root /mnt -c 'chown -R byetgin:users /home/byetgin/Desktop/nixos-config'
 
-echo "==> [7/7] Setting password for user byetgin..."
+echo "==> [8/8] Setting password for user byetgin..."
 # passwd reads from the live ISO's controlling terminal, so switch that console
 # to the same Turkish Q keymap configured for the installed system first.
 loadkeys trq
 # install.sh is normally executed via `curl | sudo bash`, so stdin is the pipe.
 # Explicitly attach passwd to the controlling terminal so it reads the keyboard.
-nixos-enter --root /mnt -c 'passwd byetgin' </dev/tty
+# A typo or mismatch should not abort an otherwise completed installation;
+# keep prompting until passwd succeeds.
+until nixos-enter --root /mnt -c 'passwd byetgin' </dev/tty; do
+  echo
+  echo "Password update failed. Please try again."
+  echo
+done
 
 echo
 echo "Done. Reboot when ready."

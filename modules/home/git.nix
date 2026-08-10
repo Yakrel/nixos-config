@@ -14,10 +14,8 @@
 
     gh = {
       enable = true;
-      settings.git_protocol = "https";
-      # Keep Git authentication declarative: after the one-time `gh auth login`,
-      # normal git fetch/pull/push uses the GitHub CLI credential helper instead
-      # of KDE askpass or a separate SSH key.
+      # After the one-time `gh auth login`, normal git fetch/pull/push uses the
+      # GitHub CLI credential helper instead of KDE askpass or a separate SSH key.
       gitCredentialHelper.enable = true;
     };
   };
