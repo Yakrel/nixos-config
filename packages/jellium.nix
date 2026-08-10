@@ -1,19 +1,14 @@
-{ pkgs }:
+{ pkgs, jelliumNightly }:
 
 let
-  archive = pkgs.fetchzip {
-    url = "https://nightly.link/andrewrabert/jellium-desktop/actions/runs/30776111020/linux-appimage-x86_64.zip";
-    hash = "sha256-WDaofSbKC+zbIyj1EtSOx6JFq2HGhvz44JtuVvJFW4Y=";
-    stripRoot = false;
-  };
-
-  src = "${archive}/JelliumDesktop-0.1.0-dev+0b88f9d-x86_64.AppImage";
+  appImage = pkgs.runCommand "jellium-desktop-nightly.AppImage" { } ''
+    cp ${jelliumNightly}/JelliumDesktop-*-x86_64.AppImage "$out"
+  '';
 in
 pkgs.appimageTools.wrapType2 rec {
   pname = "jellium-desktop";
-  version = "0.1.0-dev-0b88f9d";
-
-  inherit src;
+  version = "nightly";
+  src = appImage;
 
   extraInstallCommands =
     let
