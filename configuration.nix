@@ -1,7 +1,9 @@
-{ config, pkgs, nixosVersion, ... }:
+{ config, pkgs, nixosVersion, jelliumNightly, ... }:
 
 let
-  jelliumDesktop = import ./packages/jellium.nix { inherit pkgs; };
+  jelliumDesktop = import ./packages/jellium.nix {
+    inherit pkgs jelliumNightly;
+  };
 in
 {
   imports = [
