@@ -1,9 +1,9 @@
 { ... }:
 
 let
-  # Repo-owned NixOS crystal wallpaper, rendered at the workstation's native
-  # 2560x1440 resolution and stored with the configuration.
-  wallpaper = "${../../assets/wallpapers/nixos-crystal-2560x1440.webp}";
+  # Repo-owned 4K NixOS wallpaper. Plasma scales it to the workstation's
+  # 2560x1440 display without changing the 16:9 aspect ratio.
+  wallpaper = "${../../assets/wallpapers/ig636-wallpaper.cam.png}";
 in
 {
   programs.plasma = {
@@ -17,6 +17,10 @@ in
       wallpaper = wallpaper;
       wallpaperFillMode = "preserveAspectCrop";
     };
+
+    # Native Plasma dynamic accent: extract the accent color from the current
+    # wallpaper and keep it in sync when the wallpaper changes.
+    configFile.kdeglobals.General.accentColorFromWallpaper = true;
 
     input.keyboard.numlockOnStartup = "on";
 

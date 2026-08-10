@@ -22,7 +22,7 @@
         ll = "eza -lh";
         la = "eza -la";
         tree = "eza --tree";
-        cat = "bat";
+        cat = "bat --paging=never";
 
         # Apply the config exactly as currently locked. Does not advance flake.lock.
         nixapply = "sudo nixos-rebuild switch --flake $NIXOS_CONFIG#nixos && nvd diff /run/booted-system /run/current-system";
