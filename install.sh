@@ -124,10 +124,20 @@ else
 fi
 
 echo "==> [6/8] Verifying the installed Btrfs filesystem..."
-# Validate every allocated data/metadata block before calling the install good.
+# Flush pending writes first, then validate every allocated data/metadata block.
 # Device counters are persistent, so this also catches corruption/I/O errors
 # that occurred earlier in the install even if a later retry happened to work.
-btrfs scrub start -Bd /mnt
+sync
+if btrfs scrub start -Bd /mnt; then
+  :
+else
+  SCRUB_STATUS=$?
+  echo
+  echo "ERROR: Btrfs scrub failed (status $SCRUB_STATUS)."
+  storage_diagnostics
+  exit "$SCRUB_STATUS"
+fi
+
 if ! btrfs device stats -c /mnt; then
   echo
   echo "ERROR: Btrfs recorded device/filesystem errors during installation."
