@@ -63,7 +63,7 @@ nixupdate
 reboot
 ```
 
-`nixupdate` advances all declared flake inputs together. This includes `Yakrel/jdownloader-download-interceptor`, so after pushing a new revision of that extension to its `main` branch, the next `nixupdate` pins and loads the new revision directly in Brave.
+`nixupdate` advances all declared flake inputs together. This includes the Jellium Desktop `main` nightly AppImage and `Yakrel/jdownloader-download-interceptor`; each update is pinned by `flake.lock` before the system rebuild.
 
 After the new generation boots and works correctly:
 
