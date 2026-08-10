@@ -121,7 +121,13 @@ echo "==> [7/7] Setting password for user byetgin..."
 loadkeys trq
 # install.sh is normally executed via `curl | sudo bash`, so stdin is the pipe.
 # Explicitly attach passwd to the controlling terminal so it reads the keyboard.
-nixos-enter --root /mnt -c 'passwd byetgin' </dev/tty
+# A typo or mismatch should not abort an otherwise completed installation;
+# keep prompting until passwd succeeds.
+until nixos-enter --root /mnt -c 'passwd byetgin' </dev/tty; do
+  echo
+  echo "Password update failed. Please try again."
+  echo
+done
 
 echo
 echo "Done. Reboot when ready."
