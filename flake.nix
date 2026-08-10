@@ -28,6 +28,10 @@
       url = "github:Yakrel/jdownloader-download-interceptor";
       flake = false;
     };
+    jellium-nightly = {
+      url = "https://nightly.link/andrewrabert/jellium-desktop/workflows/build-linux-appimage/main/linux-appimage-x86_64.zip";
+      flake = false;
+    };
   };
 
   outputs = {
@@ -38,6 +42,7 @@
     nur,
     ai-dikte,
     jdownloader-interceptor,
+    jellium-nightly,
     ...
   }:
   let
@@ -50,6 +55,7 @@
       specialArgs = {
         inherit nixosVersion;
         jdownloaderInterceptor = jdownloader-interceptor;
+        jelliumNightly = jellium-nightly;
       };
       modules = [
         # NUR overlay — as a flake input instead of builtins.fetchTarball

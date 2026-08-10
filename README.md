@@ -63,7 +63,7 @@ nixupdate
 reboot
 ```
 
-`nixupdate` advances all declared flake inputs together. This includes `Yakrel/jdownloader-download-interceptor`, so after pushing a new revision of that extension to its `main` branch, the next `nixupdate` pins and loads the new revision directly in Brave.
+`nixupdate` advances all declared flake inputs together. This includes the Jellium Desktop `main` nightly AppImage and `Yakrel/jdownloader-download-interceptor`; each update is pinned by `flake.lock` before the system rebuild.
 
 After the new generation boots and works correctly:
 
@@ -83,13 +83,4 @@ If the new generation is bad, choose the previous generation in the boot menu an
 nvd diff /run/booted-system /run/current-system
 sudo nixos-rebuild list-generations
 snapper -c home list
-```
-
-## Post-install notes
-
-### Jellyfin Desktop video stutter (144 Hz)
-On high refresh rate displays (e.g. 144 Hz), 23.976 FPS video playback in **Jellyfin Desktop** can experience micro-stutter / frame drops every ~10s due to frame-rate clock drift when `sync_mode` is set to `"audio"`.
-To fix this on a fresh installation, edit `~/.local/share/jellyfin-desktop/profiles/<profile-id>/jellyfin-desktop.conf` and set:
-```json
-"sync_mode": "display-resample"
 ```
