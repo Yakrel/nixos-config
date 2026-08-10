@@ -1,5 +1,8 @@
 { config, pkgs, nixosVersion, ... }:
 
+let
+  jelliumDesktop = import ./packages/jellium.nix { inherit pkgs; };
+in
 {
   imports = [
     ./modules/hardware.nix
@@ -97,7 +100,7 @@
   environment.plasma6.excludePackages = with pkgs.kdePackages; [
     konsole   # Kitty
     kate      # VS Code
-    elisa     # Jellyfin Desktop / browser
+    elisa     # Jellium / browser
     okular    # Brave has a built-in PDF viewer
     discover  # Packages are managed declaratively with Nix
     khelpcenter
@@ -149,7 +152,7 @@
     nur.repos.jeffguorg.oh-my-pi-bin
     vscode
     vlc
-    jellyfin-desktop
+    jelliumDesktop
     obsidian
     thunderbird
   ];
