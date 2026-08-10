@@ -84,12 +84,3 @@ nvd diff /run/booted-system /run/current-system
 sudo nixos-rebuild list-generations
 snapper -c home list
 ```
-
-## Post-install notes
-
-### Jellyfin Desktop video stutter (144 Hz)
-On high refresh rate displays (e.g. 144 Hz), 23.976 FPS video playback in **Jellyfin Desktop** can experience micro-stutter / frame drops every ~10s due to frame-rate clock drift when `sync_mode` is set to `"audio"`.
-To fix this on a fresh installation, edit `~/.local/share/jellyfin-desktop/profiles/<profile-id>/jellyfin-desktop.conf` and set:
-```json
-"sync_mode": "display-resample"
-```
