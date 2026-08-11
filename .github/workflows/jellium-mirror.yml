@@ -18,7 +18,7 @@ permissions:
 jobs:
   mirror:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
 
     steps:
       - name: Check whether refresh is due
@@ -128,3 +128,33 @@ jobs:
             jellium-nightly-x86_64.zip \
             jellium-upstream.sha \
             --repo "$GITHUB_REPOSITORY"
+
+      # Validate only after the release exists, because the flake input points
+      # at the rolling GitHub Release asset published above.
+      - name: Checkout NixOS configuration
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        if: steps.gate.outputs.run == 'true'
+        uses: DeterminateSystems/nix-installer-action@v21
+
+      - name: Create validation lock
+        if: steps.gate.outputs.run == 'true'
+        run: nix flake lock
+
+      - name: Verify VPN services
+        if: steps.gate.outputs.run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(nix eval --json '.#nixosConfigurations.nixos.config.services.cloudflare-warp.enable')" == "true" ]]
+          [[ "$(nix eval --json '.#nixosConfigurations.nixos.config.services.tailscale.enable')" == "true" ]]
+
+      - name: Check flake
+        if: steps.gate.outputs.run == 'true'
+        run: nix flake check --show-trace
+
+      - name: Build complete NixOS system
+        if: steps.gate.outputs.run == 'true'
+        run: nix build --no-link --print-build-logs --show-trace '.#nixosConfigurations.nixos.config.system.build.toplevel'
