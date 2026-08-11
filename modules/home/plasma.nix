@@ -20,7 +20,11 @@ in
 
     # Native Plasma dynamic accent: extract the accent color from the current
     # wallpaper and keep it in sync when the wallpaper changes.
-    configFile.kdeglobals.General.accentColorFromWallpaper = true;
+    configFile.kdeglobals.General = {
+      accentColorFromWallpaper = true;
+      TerminalApplication = "kitty";
+      TerminalService = "kitty.desktop";
+    };
 
     input.keyboard.numlockOnStartup = "on";
 
