@@ -120,10 +120,7 @@ in
     pulse.enable = true;
   };
 
-  programs.gemini-dikte = {
-    enable = true;
-    user = "byetgin";
-  };
+  programs.gemini-dikte.enable = true;
 
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];

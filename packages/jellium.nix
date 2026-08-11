@@ -12,7 +12,7 @@ pkgs.appimageTools.wrapType2 rec {
 
   extraInstallCommands =
     let
-      contents = pkgs.appimageTools.extractType2 {
+      contents = pkgs.appimageTools.extract {
         inherit pname version src;
       };
     in
