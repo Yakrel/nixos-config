@@ -158,3 +158,11 @@ jobs:
       - name: Build complete NixOS system
         if: steps.gate.outputs.run == 'true'
         run: nix build --no-link --print-build-logs --show-trace '.#nixosConfigurations.nixos.config.system.build.toplevel'
+
+      - name: Mark validated configuration
+        if: steps.gate.outputs.run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git tag -f jellium-validated "$GITHUB_SHA"
+          git push --force origin refs/tags/jellium-validated
