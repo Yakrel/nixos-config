@@ -3,7 +3,9 @@ name: Mirror Jellium Nightly
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 3 * * 1"
+    # GitHub cron has no exact "every 72 hours" interval. Run the cheap gate
+    # daily and only refresh when the rolling release is at least 72h old.
+    - cron: "17 3 * * *"
   push:
     branches:
       - main
@@ -19,7 +21,44 @@ jobs:
     timeout-minutes: 20
 
     steps:
+      - name: Check whether refresh is due
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Manual runs and the first run after the workflow lands on main
+          # should refresh immediately.
+          if [[ "$GITHUB_EVENT_NAME" != "schedule" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          updated_at="$(
+            gh api "repos/$GITHUB_REPOSITORY/releases/tags/jellium-nightly" \
+              --jq '.updated_at' 2>/dev/null || true
+          )"
+
+          if [[ -z "$updated_at" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          now="$(date -u +%s)"
+          last="$(date -u -d "$updated_at" +%s)"
+          age="$((now - last))"
+
+          if (( age >= 259200 )); then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Jellium mirror is only $((age / 3600))h old; next refresh waits for 72h."
+          fi
+
       - name: Download latest upstream AppImage archive
+        if: steps.gate.outputs.run == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -37,6 +76,7 @@ jobs:
           sha256sum jellium-nightly-x86_64.zip
 
       - name: Record upstream revision
+        if: steps.gate.outputs.run == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -46,6 +86,7 @@ jobs:
           cat jellium-upstream.sha
 
       - name: Publish rolling GitHub release
+        if: steps.gate.outputs.run == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -58,10 +99,17 @@ jobs:
 
           Upstream commit at refresh time: ${upstream_sha}
 
-          This release asset is refreshed weekly and may also be refreshed manually.
+          This rolling release is refreshed every 72 hours and may also be refreshed manually. Previous assets are removed when a new mirror is published.
           EOF
 
           if gh release view jellium-nightly --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            # Keep only the newest mirror: remove the previous files before
+            # uploading their replacements to the same rolling release.
+            gh release delete-asset jellium-nightly jellium-nightly-x86_64.zip \
+              --repo "$GITHUB_REPOSITORY" --yes 2>/dev/null || true
+            gh release delete-asset jellium-nightly jellium-upstream.sha \
+              --repo "$GITHUB_REPOSITORY" --yes 2>/dev/null || true
+
             gh release edit jellium-nightly \
               --repo "$GITHUB_REPOSITORY" \
               --title "Jellium Desktop nightly mirror" \
@@ -79,5 +127,4 @@ jobs:
           gh release upload jellium-nightly \
             jellium-nightly-x86_64.zip \
             jellium-upstream.sha \
-            --repo "$GITHUB_REPOSITORY" \
-            --clobber
+            --repo "$GITHUB_REPOSITORY"
