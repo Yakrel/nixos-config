@@ -28,6 +28,8 @@ Home Manager already configures Git to use the GitHub CLI credential helper over
 
 Brave account/session state stays intentionally mutable. Enable Brave Sync from the browser when wanted. Bitwarden and the JDownloader Download Interceptor are installed by the Nix configuration; other synced extensions can come from Brave Sync.
 
+Cloudflare WARP and Tailscale daemons are installed and enabled declaratively. Their account/device authentication is intentionally left manual so no VPN credentials are stored in this public repository.
+
 Save the first working lock:
 
 ```bash
@@ -63,7 +65,7 @@ nixupdate
 reboot
 ```
 
-`nixupdate` advances all declared flake inputs together. Jellium Desktop is refreshed from the repository's rolling GitHub Release mirror of the upstream `main` AppImage; the mirror refreshes every 72 hours, replaces the previous release assets instead of accumulating old copies, and can also be refreshed manually. `Yakrel/jdownloader-download-interceptor` follows its declared input; each update is pinned by `flake.lock` before the system rebuild.
+`nixupdate` advances all declared flake inputs together. Jellium Desktop is refreshed from the repository's 72-hour rolling GitHub Release mirror of the upstream `main` AppImage, while `Yakrel/jdownloader-download-interceptor` follows its declared input; each update is pinned by `flake.lock` before the system rebuild.
 
 After the new generation boots and works correctly:
 
