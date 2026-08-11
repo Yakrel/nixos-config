@@ -63,7 +63,7 @@ nixupdate
 reboot
 ```
 
-`nixupdate` advances all declared flake inputs together. Jellium Desktop is refreshed from the repository's weekly GitHub Release mirror of the upstream `main` AppImage, while `Yakrel/jdownloader-download-interceptor` follows its declared input; each update is pinned by `flake.lock` before the system rebuild.
+`nixupdate` advances all declared flake inputs together. Jellium Desktop is refreshed from the repository's rolling GitHub Release mirror of the upstream `main` AppImage; the mirror refreshes every 72 hours, replaces the previous release assets instead of accumulating old copies, and can also be refreshed manually. `Yakrel/jdownloader-download-interceptor` follows its declared input; each update is pinned by `flake.lock` before the system rebuild.
 
 After the new generation boots and works correctly:
 
