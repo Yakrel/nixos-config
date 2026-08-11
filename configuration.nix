@@ -11,6 +11,7 @@ in
     ./modules/storage.nix
     ./modules/terminal.nix
     ./modules/brave.nix
+    ./modules/vpn.nix
   ];
 
   # Boot

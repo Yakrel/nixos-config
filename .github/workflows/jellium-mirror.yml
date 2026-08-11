@@ -1,0 +1,160 @@
+name: Mirror Jellium Nightly
+
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub cron has no exact "every 72 hours" interval. Run the cheap gate
+    # daily and only refresh when the rolling release is at least 72h old.
+    - cron: "17 3 * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/jellium-mirror.yml
+
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check whether refresh is due
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Manual runs and the first run after the workflow lands on main
+          # should refresh immediately.
+          if [[ "$GITHUB_EVENT_NAME" != "schedule" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          updated_at="$(
+            gh api "repos/$GITHUB_REPOSITORY/releases/tags/jellium-nightly" \
+              --jq '.updated_at' 2>/dev/null || true
+          )"
+
+          if [[ -z "$updated_at" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          now="$(date -u +%s)"
+          last="$(date -u -d "$updated_at" +%s)"
+          age="$((now - last))"
+
+          if (( age >= 259200 )); then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Jellium mirror is only $((age / 3600))h old; next refresh waits for 72h."
+          fi
+
+      - name: Download latest upstream AppImage archive
+        if: steps.gate.outputs.run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          url="https://nightly.link/andrewrabert/jellium-desktop/workflows/build-linux-appimage/main/linux-appimage-x86_64.zip"
+          curl -fL \
+            --retry 5 \
+            --retry-delay 5 \
+            --retry-all-errors \
+            "$url" \
+            -o jellium-nightly-x86_64.zip
+
+          count="$(unzip -Z1 jellium-nightly-x86_64.zip | grep -Ec '^JelliumDesktop-.*-x86_64\.AppImage$')"
+          test "$count" -eq 1
+          sha256sum jellium-nightly-x86_64.zip
+
+      - name: Record upstream revision
+        if: steps.gate.outputs.run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-remote https://github.com/andrewrabert/jellium-desktop.git refs/heads/main \
+            | cut -f1 > jellium-upstream.sha
+          test -s jellium-upstream.sha
+          cat jellium-upstream.sha
+
+      - name: Publish rolling GitHub release
+        if: steps.gate.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          upstream_sha="$(cat jellium-upstream.sha)"
+          cat > release-notes.md <<EOF
+          Rolling mirror of the latest successful x86_64 Jellium Desktop AppImage build from upstream main.
+
+          Upstream commit at refresh time: ${upstream_sha}
+
+          This rolling release is refreshed every 72 hours and may also be refreshed manually. Previous assets are removed when a new mirror is published.
+          EOF
+
+          if gh release view jellium-nightly --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            # Keep only the newest mirror: remove the previous files before
+            # uploading their replacements to the same rolling release.
+            gh release delete-asset jellium-nightly jellium-nightly-x86_64.zip \
+              --repo "$GITHUB_REPOSITORY" --yes 2>/dev/null || true
+            gh release delete-asset jellium-nightly jellium-upstream.sha \
+              --repo "$GITHUB_REPOSITORY" --yes 2>/dev/null || true
+
+            gh release edit jellium-nightly \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Jellium Desktop nightly mirror" \
+              --notes-file release-notes.md \
+              --prerelease
+          else
+            gh release create jellium-nightly \
+              --repo "$GITHUB_REPOSITORY" \
+              --target main \
+              --title "Jellium Desktop nightly mirror" \
+              --notes-file release-notes.md \
+              --prerelease
+          fi
+
+          gh release upload jellium-nightly \
+            jellium-nightly-x86_64.zip \
+            jellium-upstream.sha \
+            --repo "$GITHUB_REPOSITORY"
+
+      # Validate only after the release exists, because the flake input points
+      # at the rolling GitHub Release asset published above.
+      - name: Checkout NixOS configuration
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        if: steps.gate.outputs.run == 'true'
+        uses: DeterminateSystems/nix-installer-action@v21
+
+      - name: Create validation lock
+        if: steps.gate.outputs.run == 'true'
+        run: nix flake lock
+
+      - name: Verify VPN services
+        if: steps.gate.outputs.run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(nix eval --json '.#nixosConfigurations.nixos.config.services.cloudflare-warp.enable')" == "true" ]]
+          [[ "$(nix eval --json '.#nixosConfigurations.nixos.config.services.tailscale.enable')" == "true" ]]
+
+      - name: Check flake
+        if: steps.gate.outputs.run == 'true'
+        run: nix flake check --show-trace
+
+      - name: Build complete NixOS system
+        if: steps.gate.outputs.run == 'true'
+        run: nix build --no-link --print-build-logs --show-trace '.#nixosConfigurations.nixos.config.system.build.toplevel'
