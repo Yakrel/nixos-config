@@ -29,7 +29,7 @@
       flake = false;
     };
     jellium-nightly = {
-      url = "https://nightly.link/andrewrabert/jellium-desktop/workflows/build-linux-appimage/main/linux-appimage-x86_64.zip";
+      url = "https://github.com/Yakrel/nixos-config/releases/download/jellium-nightly/jellium-nightly-x86_64.zip";
       flake = false;
     };
   };
