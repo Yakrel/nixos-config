@@ -21,7 +21,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     ai-dikte = {
-      url = "github:Yakrel/ai-dikte";
+      url = "github:Yakrel/ai-dikte/nixos-v0.2.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     jdownloader-interceptor = {
