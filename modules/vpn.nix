@@ -19,9 +19,4 @@ in
     enable = true;
     package = cloudflareWarpCli;
   };
-
-  services.tailscale = {
-    enable = true;
-    openFirewall = true;
-  };
 }

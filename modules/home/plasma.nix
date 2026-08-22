@@ -20,10 +20,15 @@ in
 
     # Native Plasma dynamic accent: extract the accent color from the current
     # wallpaper and keep it in sync when the wallpaper changes.
-    configFile.kdeglobals.General = {
-      accentColorFromWallpaper = true;
-      TerminalApplication = "kitty";
-      TerminalService = "kitty.desktop";
+    configFile = {
+      kdeglobals.General = {
+        accentColorFromWallpaper = true;
+        TerminalApplication = "kitty";
+        TerminalService = "kitty.desktop";
+      };
+      dolphinrc.General = {
+        showHiddenFiles = true;
+      };
     };
 
     input.keyboard.numlockOnStartup = "on";

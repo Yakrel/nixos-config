@@ -29,6 +29,10 @@ in
   # Locale and keyboard
   time.timeZone = "Europe/Istanbul";
   i18n.defaultLocale = "en_US.UTF-8";
+  i18n.supportedLocales = [
+    "en_US.UTF-8/UTF-8"
+    "tr_TR.UTF-8/UTF-8"
+  ];
   i18n.extraLocaleSettings = {
     LC_ADDRESS = "tr_TR.UTF-8";
     LC_IDENTIFICATION = "tr_TR.UTF-8";
@@ -43,6 +47,9 @@ in
 
   services.xserver.xkb.layout = "tr";
   console.keyMap = "trq";
+
+  # Disable built-in HTML/man manual build to save download closure size and time
+  documentation.nixos.enable = false;
 
   fonts = {
     packages = [ pkgs.nerd-fonts.jetbrains-mono ];
@@ -122,6 +129,26 @@ in
 
   programs.gemini-dikte.enable = true;
 
+  # Nix Helper (nh) — clean CLI for switch/boot/search
+  programs.nh = {
+    enable = true;
+    clean.enable = false; # Handled by nix.gc
+    flake = "/home/byetgin/Desktop/nixos-config";
+  };
+
+  # KDE Connect (Android phone integration)
+  programs.kdeconnect.enable = true;
+
+  # Aria2 background RPC daemon for Brave / Aria2 Explorer
+  systemd.user.services.aria2 = {
+    description = "Aria2 RPC background daemon";
+    wantedBy = [ "default.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.aria2}/bin/aria2c --enable-rpc --rpc-listen-all=false --max-connection-per-server=16 --split=16 --min-split-size=1M --dir=%h/Downloads";
+      Restart = "on-failure";
+    };
+  };
+
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
@@ -152,6 +179,7 @@ in
     nur.repos.jeffguorg.oh-my-pi-bin
     vscode
     vlc
+    aria2
     jelliumDesktop
     obsidian
     thunderbird

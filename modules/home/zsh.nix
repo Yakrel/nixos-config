@@ -90,13 +90,6 @@
         la = "eza -la";
         tree = "eza --tree";
         cat = "bat --paging=never";
-
-        # Apply the config exactly as currently locked. Does not advance flake.lock.
-        nixapply = "sudo nixos-rebuild switch --flake $NIXOS_CONFIG#nixos && nvd diff /run/booted-system /run/current-system";
-
-        # Explicit rolling upgrade: advance flake.lock and prepare the new system for next boot.
-        # Kernel/Mesa/Plasma changes activate after reboot instead of mid-session.
-        nixupdate = "nix flake update --flake $NIXOS_CONFIG && sudo nixos-rebuild boot --flake $NIXOS_CONFIG#nixos && nvd diff /run/booted-system /nix/var/nix/profiles/system";
       };
     };
 

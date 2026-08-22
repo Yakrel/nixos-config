@@ -166,7 +166,6 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$(nix eval --json '.#nixosConfigurations.nixos.config.services.cloudflare-warp.enable')" == "true" ]]
-          [[ "$(nix eval --json '.#nixosConfigurations.nixos.config.services.tailscale.enable')" == "true" ]]
 
       - name: Check flake
         if: steps.gate.outputs.run == 'true'

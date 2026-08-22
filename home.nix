@@ -5,6 +5,7 @@
     ./modules/home/kitty.nix
     ./modules/home/plasma.nix
     ./modules/home/places.nix
+    ./modules/home/omp.nix
   ];
 
   programs.home-manager.enable = true;

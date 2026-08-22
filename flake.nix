@@ -24,10 +24,6 @@
       url = "github:Yakrel/ai-dikte/nixos-v0.2.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    jdownloader-interceptor = {
-      url = "github:Yakrel/jdownloader-download-interceptor";
-      flake = false;
-    };
     jellium-nightly = {
       url = "https://github.com/Yakrel/nixos-config/releases/download/jellium-nightly/jellium-nightly-x86_64.zip";
       flake = false;
@@ -41,7 +37,6 @@
     disko,
     nur,
     ai-dikte,
-    jdownloader-interceptor,
     jellium-nightly,
     ...
   }:
@@ -54,7 +49,6 @@
       system = "x86_64-linux";
       specialArgs = {
         inherit nixosVersion;
-        jdownloaderInterceptor = jdownloader-interceptor;
         jelliumNightly = jellium-nightly;
       };
       modules = [
