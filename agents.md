@@ -10,15 +10,15 @@
 - Never run `nix flake update` implicitly as part of an unrelated config change; advancing input revisions must be an explicit rolling-update action
 
 ## Goal
-- Rolling release, Arch/yay style: `nixupdate` intentionally advances the rolling flake inputs
+- Rolling release, Arch/yay style: `nix flake update` intentionally advances the rolling flake inputs
 - Keep `flake.lock` in Git so every known-good package/input set is reproducible
-- `nixupdate` builds a new boot generation; it must not replace the running graphics/kernel stack with `switch`
+- Rolling upgrades build a new boot generation with `nh os boot`; it must not replace the running graphics/kernel stack with `switch`
 - NUR follows its flake input and is advanced together with the other inputs
 
 ## Daily workflow
 - Use normal Git commands for repository synchronization; do not invent a `nixpull` alias or hide Git operations behind Nix-named aliases
-- `nixapply`: rebuild/apply the current configuration using the existing `flake.lock`; use this after adding/removing packages, changing KDE/Home Manager settings, services, mounts, aliases, etc.
-- `nixupdate`: intentionally advance flake inputs (`nix flake update`) and build the next boot generation; this is the command that normally changes `flake.lock`
+- `nh os switch`: rebuild/apply the current configuration using the existing `flake.lock`; use this after adding/removing packages, changing KDE/Home Manager settings, services, mounts, etc.
+- `nix flake update && nh os boot`: intentionally advance flake inputs and build the next boot generation; this is the workflow that normally changes `flake.lock`
 - Prefer a clean Git working tree before `git pull`; local work may be committed without being pushed first, but do not discard or overwrite local changes automatically
 
 ## flake.lock policy
@@ -35,7 +35,7 @@
 - When `install.sh` is piped from curl, attach the final `passwd byetgin` call to `/dev/tty` so it reads the real keyboard rather than the pipe.
 - The installer must not automatically stage, commit or push `flake.lock`; the user saves the checkpoint only after verifying a successful boot.
 - After the first successful boot, commit and push the initial `flake.lock` as the first known-good checkpoint, then take a manual `/home` Snapper baseline.
-- After every intentional `nixupdate`, reboot into the new generation and verify the system before committing the changed `flake.lock`.
+- After every intentional rolling update (`nix flake update && nh os boot`), reboot into the new generation and verify the system before committing the changed `flake.lock`.
 - If the new generation is good, commit the lock update. Preferred commit message: `chore: update flake inputs (YYYY-MM-DD)`.
 - Do not invent a manual sequential revision number. Git commit hashes already provide immutable revision identity; the date in the commit message is only for readability.
 - If the new generation is bad, boot the previous NixOS generation and restore the previous committed `flake.lock` before rebuilding.

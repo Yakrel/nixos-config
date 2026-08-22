@@ -122,6 +122,16 @@ in
 
   programs.gemini-dikte.enable = true;
 
+  # Nix Helper (nh) — clean CLI for switch/boot/search
+  programs.nh = {
+    enable = true;
+    clean.enable = false; # Handled by nix.gc
+    flake = "/home/byetgin/Desktop/nixos-config";
+  };
+
+  # KDE Connect (Android phone integration)
+  programs.kdeconnect.enable = true;
+
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
@@ -152,6 +162,7 @@ in
     nur.repos.jeffguorg.oh-my-pi-bin
     vscode
     vlc
+    freedownloadmanager
     jelliumDesktop
     obsidian
     thunderbird
