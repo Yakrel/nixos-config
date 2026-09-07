@@ -127,8 +127,6 @@ in
     pulse.enable = true;
   };
 
-  programs.gemini-dikte.enable = true;
-
   # Nix Helper (nh) — clean CLI for switch/boot/search
   programs.nh = {
     enable = true;

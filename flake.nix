@@ -20,10 +20,7 @@
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    ai-dikte = {
-      url = "github:Yakrel/ai-dikte/nixos-v0.2.0";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    ai-dikte.url = "github:Yakrel/ai-dikte";
     jellium-nightly = {
       url = "https://github.com/Yakrel/nixos-config/releases/download/jellium-nightly/jellium-nightly-x86_64.zip";
       flake = false;
@@ -56,7 +53,11 @@
         { nixpkgs.overlays = [ nur.overlays.default ]; }
         disko.nixosModules.disko
         ./disko.nix
-        ai-dikte.nixosModules.default
+        {
+          environment.systemPackages = [
+            ai-dikte.packages.x86_64-linux.ai-dikte-kde
+          ];
+        }
         ./configuration.nix
         home-manager.nixosModules.home-manager
         {
